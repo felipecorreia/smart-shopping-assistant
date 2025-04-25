@@ -32,6 +32,7 @@ ENV/
 # Credenciais
 *.json
 credentials/
+.todo.txt
 
 # Logs
 *.log

@@ -1,0 +1,4 @@
+
+
+##próximos passos:
+5. Configurar Variáveis de Ambiente

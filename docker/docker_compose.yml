@@ -1,0 +1,67 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: smart-shopping-assistant
+    restart: unless-stopped
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - BIGQUERY_PROJECT_ID=${BIGQUERY_PROJECT_ID}
+      - BIGQUERY_DATASET_ID=${BIGQUERY_DATASET_ID}
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/google-credentials.json
+    volumes:
+      - ../credentials:/app/credentials
+    command: python -m main
+    networks:
+      - smart-shopping-network
+
+  telegram-bot:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: telegram-bot
+    restart: unless-stopped
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - BIGQUERY_PROJECT_ID=${BIGQUERY_PROJECT_ID}
+      - BIGQUERY_DATASET_ID=${BIGQUERY_DATASET_ID}
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/google-credentials.json
+      - TELEGRAM_BOT_TOKEN=${TELEGRAM_BOT_TOKEN}
+    volumes:
+      - ../credentials:/app/credentials
+    command: python -m messaging.telegram_bot
+    networks:
+      - smart-shopping-network
+    depends_on:
+      - app
+
+  whatsapp-bot:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: whatsapp-bot
+    restart: unless-stopped
+    environment:
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
+      - BIGQUERY_PROJECT_ID=${BIGQUERY_PROJECT_ID}
+      - BIGQUERY_DATASET_ID=${BIGQUERY_DATASET_ID}
+      - GOOGLE_APPLICATION_CREDENTIALS=/app/credentials/google-credentials.json
+      - TWILIO_ACCOUNT_SID=${TWILIO_ACCOUNT_SID}
+      - TWILIO_AUTH_TOKEN=${TWILIO_AUTH_TOKEN}
+      - TWILIO_WHATSAPP_NUMBER=${TWILIO_WHATSAPP_NUMBER}
+    volumes:
+      - ../credentials:/app/credentials
+    command: python -m messaging.whatsapp_bot
+    ports:
+      - "5000:5000"
+    networks:
+      - smart-shopping-network
+    depends_on:
+      - app
+
+networks:
+  smart-shopping-network:
+    driver: bridge
