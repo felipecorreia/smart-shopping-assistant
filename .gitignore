@@ -1,0 +1,42 @@
+# Arquivos Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Ambiente virtual
+venv/
+ENV/
+
+# Arquivos de ambiente
+.env
+.env.*
+!.env.example
+
+# Credenciais
+*.json
+credentials/
+
+# Logs
+*.log
+logs/
+
+# Arquivos temporários
+*.tmp
+.DS_Store
