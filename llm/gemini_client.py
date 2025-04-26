@@ -35,7 +35,7 @@ class GeminiClient:
         genai.configure(api_key=self.api_key)
         
         # Inicializar modelo
-        self.model = genai.GenerativeModel('gemini-pro')
+        self.model = genai.GenerativeModel('gemini-2.0-flash')
         
         logger.info("Cliente Gemini inicializado")
     

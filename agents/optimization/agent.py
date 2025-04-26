@@ -4,11 +4,9 @@ Agente para otimização de compras.
 
 import os
 import logging
-from typing import List, Dict, Any, Optional
+from typing import Dict, Any, List, Optional, TypedDict, Annotated, Literal
 from langgraph.graph import StateGraph, END
-from collections import defaultdict
-
-from data.models import SupermarketOption, PriceOption
+from data.models import SupermarketOption, PriceOption, ShoppingRecommendation
 
 # Configurar logging
 logging.basicConfig(
@@ -17,237 +15,226 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-def find_best_single_store(state: Dict[str, Any]) -> Dict[str, Any]:
+# Definir o schema de estado
+class OptimizationState(TypedDict):
+    """Estado do agente de otimização."""
+    price_options: Dict[str, List[Dict[str, Any]]]
+    products_not_found: List[str]
+    recommendation: Optional[Dict[str, Any]]
+    error: Optional[str]
+
+def find_best_single_store(state: OptimizationState) -> OptimizationState:
     """
-    Encontra o melhor supermercado para comprar todos os produtos.
+    Encontra a melhor opção de compra em um único supermercado.
     
     Args:
-        state: Estado atual do grafo
+        state: Estado atual
         
     Returns:
         Estado atualizado
     """
     try:
-        price_options = state.get("price_options", {})
+        price_options = state["price_options"]
         
-        if not price_options:
-            state["success"] = False
-            state["error"] = "Opções de preço não encontradas"
-            return state
-        
-        # Agrupar produtos por supermercado
-        supermarket_products = defaultdict(list)
+        # Calcular o preço total para cada supermercado
+        supermarket_totals = {}
+        supermarket_items = {}
         
         for product_name, options in price_options.items():
             for option in options:
-                supermarket_name = option.get("supermarket_name")
-                supermarket_products[supermarket_name].append(option)
-        
-        # Encontrar supermercado com mais produtos
-        best_supermarket = None
-        best_products = []
-        best_total = float('inf')
-        
-        for supermarket_name, products in supermarket_products.items():
-            # Verificar se o supermercado tem todos os produtos
-            product_names = set(p.get("product_name") for p in products)
-            if len(product_names) == len(price_options):
-                # Calcular preço total
-                total_price = sum(p.get("price", 0) for p in products)
+                supermarket_name = option["supermarket_name"]
+                price = option["price"]
                 
-                if total_price < best_total:
-                    best_total = total_price
-                    best_supermarket = supermarket_name
-                    best_products = products
+                if supermarket_name not in supermarket_totals:
+                    supermarket_totals[supermarket_name] = 0
+                    supermarket_items[supermarket_name] = []
+                
+                supermarket_totals[supermarket_name] += price
+                supermarket_items[supermarket_name].append(option)
         
-        # Se não encontrou um supermercado com todos os produtos,
-        # escolher o que tem mais produtos
-        if not best_supermarket:
-            max_products = 0
-            for supermarket_name, products in supermarket_products.items():
-                product_names = set(p.get("product_name") for p in products)
-                if len(product_names) > max_products:
-                    max_products = len(product_names)
-                    best_supermarket = supermarket_name
-                    best_products = products
-                    best_total = sum(p.get("price", 0) for p in products)
+        # Encontrar o supermercado com o menor preço total
+        best_supermarket = min(supermarket_totals.items(), key=lambda x: x[1])
+        best_supermarket_name = best_supermarket[0]
+        best_supermarket_total = best_supermarket[1]
         
-        # Atualizar estado
-        state["single_store_option"] = {
-            "supermarket_name": best_supermarket,
-            "total_price": best_total,
-            "items": best_products
+        # Criar opção de supermercado
+        single_store_option = {
+            "supermarket_name": best_supermarket_name,
+            "total_price": best_supermarket_total,
+            "items": supermarket_items[best_supermarket_name]
         }
         
-        logger.info(f"Melhor supermercado: {best_supermarket}, Preço total: {best_total}")
-        return state
-    
+        logger.info(f"Melhor supermercado: {best_supermarket_name}, Preço total: {best_supermarket_total}")
+        
+        return {
+            "price_options": price_options,
+            "products_not_found": state["products_not_found"],
+            "recommendation": {
+                "single_store_option": single_store_option,
+                "multi_store_option": [],
+                "savings": 0.0,
+                "savings_percentage": 0.0,
+                "products_not_found": state["products_not_found"]
+            },
+            "error": None
+        }
     except Exception as e:
-        logger.error(f"Erro ao encontrar melhor supermercado: {str(e)}")
-        state["error"] = f"Erro ao encontrar melhor supermercado: {str(e)}"
-        return state
+        error_message = f"Erro ao encontrar melhor supermercado: {str(e)}"
+        logger.error(error_message)
+        return {
+            "price_options": state["price_options"],
+            "products_not_found": state["products_not_found"],
+            "recommendation": None,
+            "error": error_message
+        }
 
-def find_best_multi_store(state: Dict[str, Any]) -> Dict[str, Any]:
+def find_best_multi_store(state: OptimizationState) -> OptimizationState:
     """
-    Encontra a melhor combinação de supermercados para comprar os produtos.
+    Encontra a melhor opção de compra em múltiplos supermercados.
     
     Args:
-        state: Estado atual do grafo
+        state: Estado atual
         
     Returns:
         Estado atualizado
     """
     try:
-        price_options = state.get("price_options", {})
-        single_store_option = state.get("single_store_option", {})
+        price_options = state["price_options"]
+        recommendation = state["recommendation"]
         
-        if not price_options or not single_store_option:
-            state["success"] = False
-            state["error"] = "Opções de preço ou opção de supermercado único não encontradas"
-            return state
+        if not recommendation:
+            raise ValueError("Recomendação de único supermercado não encontrada")
+        
+        single_store_option = recommendation["single_store_option"]
+        single_store_total = single_store_option["total_price"]
         
         # Encontrar o melhor preço para cada produto
-        best_options = []
-        
+        best_prices = {}
         for product_name, options in price_options.items():
-            if options:
-                # Ordenar por preço
-                sorted_options = sorted(options, key=lambda x: x.get("price", float('inf')))
-                best_options.append(sorted_options[0])
+            best_option = min(options, key=lambda x: x["price"])
+            best_prices[product_name] = best_option
         
         # Agrupar por supermercado
-        supermarket_options = defaultdict(list)
-        
-        for option in best_options:
-            supermarket_name = option.get("supermarket_name")
-            supermarket_options[supermarket_name].append(option)
+        supermarket_items = {}
+        for product_name, option in best_prices.items():
+            supermarket_name = option["supermarket_name"]
+            
+            if supermarket_name not in supermarket_items:
+                supermarket_items[supermarket_name] = []
+            
+            supermarket_items[supermarket_name].append(option)
         
         # Criar opções de supermercado
-        multi_store_option = []
+        multi_store_options = []
+        multi_store_total = 0.0
         
-        for supermarket_name, products in supermarket_options.items():
-            total_price = sum(p.get("price", 0) for p in products)
+        for supermarket_name, items in supermarket_items.items():
+            total_price = sum(item["price"] for item in items)
+            multi_store_total += total_price
             
-            multi_store_option.append({
+            multi_store_options.append({
                 "supermarket_name": supermarket_name,
                 "total_price": total_price,
-                "items": products
+                "items": items
             })
         
         # Calcular economia
-        multi_store_total = sum(option.get("total_price", 0) for option in multi_store_option)
-        single_store_total = single_store_option.get("total_price", 0)
-        
         savings = single_store_total - multi_store_total
-        savings_percentage = (savings / single_store_total * 100) if single_store_total > 0 else 0
+        savings_percentage = (savings / single_store_total) * 100 if single_store_total > 0 else 0.0
         
-        # Atualizar estado
-        state["multi_store_option"] = multi_store_option
-        state["savings"] = savings
-        state["savings_percentage"] = round(savings_percentage, 2)
+        logger.info(f"Economia com múltiplos supermercados: {savings:.2f} ({savings_percentage:.2f}%)")
         
-        logger.info(f"Economia: {savings} ({savings_percentage:.2f}%)")
-        return state
-    
-    except Exception as e:
-        logger.error(f"Erro ao encontrar melhor combinação de supermercados: {str(e)}")
-        state["error"] = f"Erro ao encontrar melhor combinação de supermercados: {str(e)}"
-        return state
-
-def create_recommendation(state: Dict[str, Any]) -> Dict[str, Any]:
-    """
-    Cria a recomendação final.
-    
-    Args:
-        state: Estado atual do grafo
+        # Atualizar recomendação
+        recommendation["multi_store_option"] = multi_store_options
+        recommendation["savings"] = savings
+        recommendation["savings_percentage"] = savings_percentage
         
-    Returns:
-        Estado atualizado
-    """
-    try:
-        single_store_option = state.get("single_store_option", {})
-        multi_store_option = state.get("multi_store_option", [])
-        savings = state.get("savings", 0)
-        savings_percentage = state.get("savings_percentage", 0)
-        products_not_found = state.get("products_not_found", [])
-        
-        # Criar recomendação
-        recommendation = {
-            "single_store_option": single_store_option,
-            "multi_store_option": multi_store_option,
-            "savings": savings,
-            "savings_percentage": savings_percentage,
-            "products_not_found": products_not_found
+        return {
+            "price_options": price_options,
+            "products_not_found": state["products_not_found"],
+            "recommendation": recommendation,
+            "error": None
         }
-        
-        # Atualizar estado
-        state["recommendation"] = recommendation
-        state["success"] = True
-        
-        logger.info("Recomendação criada com sucesso")
-        return state
-    
     except Exception as e:
-        logger.error(f"Erro ao criar recomendação: {str(e)}")
-        state["success"] = False
-        state["error"] = f"Erro ao criar recomendação: {str(e)}"
-        return state
+        error_message = f"Erro ao encontrar melhor opção de múltiplos supermercados: {str(e)}"
+        logger.error(error_message)
+        return {
+            "price_options": state["price_options"],
+            "products_not_found": state["products_not_found"],
+            "recommendation": state["recommendation"],
+            "error": error_message
+        }
 
-def create_optimization_graph() -> StateGraph:
+def create_graph() -> StateGraph:
     """
-    Cria o grafo de otimização.
+    Cria o grafo de estado para o agente de otimização.
     
     Returns:
-        Grafo de otimização
+        Grafo de estado compilado
     """
-    # Definir grafo
-    workflow = StateGraph(name="optimization")
+    # Criar grafo de estado
+    workflow = StateGraph(OptimizationState)
     
     # Adicionar nós
     workflow.add_node("find_best_single_store", find_best_single_store)
     workflow.add_node("find_best_multi_store", find_best_multi_store)
-    workflow.add_node("create_recommendation", create_recommendation)
     
-    # Definir arestas
+    # Definir o nó de entrada
     workflow.set_entry_point("find_best_single_store")
+    
+    # Adicionar arestas
     workflow.add_edge("find_best_single_store", "find_best_multi_store")
-    workflow.add_edge("find_best_multi_store", "create_recommendation")
-    workflow.add_edge("create_recommendation", END)
+    workflow.add_edge("find_best_multi_store", END)
     
     # Compilar grafo
     return workflow.compile()
 
-def run_optimization_agent(price_options: Dict[str, List[Dict[str, Any]]], products_not_found: List[str]) -> Dict[str, Any]:
+def run_optimization_agent(
+    price_options: Dict[str, List[Dict[str, Any]]],
+    products_not_found: List[str]
+) -> Dict[str, Any]:
     """
-    Executa o agente de otimização.
+    Executa o agente de otimização para encontrar as melhores opções de compra.
     
     Args:
-        price_options: Opções de preço por produto
-        products_not_found: Produtos não encontrados
+        price_options: Opções de preço para cada produto
+        products_not_found: Lista de produtos não encontrados
         
     Returns:
         Dicionário com resultado da operação
     """
     try:
         # Criar grafo
-        graph = create_optimization_graph()
+        graph = create_graph()
         
         # Executar grafo
         result = graph.invoke({
             "price_options": price_options,
-            "products_not_found": products_not_found
+            "products_not_found": products_not_found,
+            "recommendation": None,
+            "error": None
         })
         
-        if result.get("success", False):
-            logger.info("Agente de otimização executado com sucesso")
-            return result
-        else:
-            logger.error(f"Erro no agente de otimização: {result.get('error')}")
-            return result
-    
+        if result.get("error"):
+            return {
+                "success": False,
+                "error": result["error"]
+            }
+        
+        if not result.get("recommendation"):
+            return {
+                "success": False,
+                "error": "Não foi possível gerar uma recomendação"
+            }
+        
+        return {
+            "success": True,
+            "recommendation": result["recommendation"]
+        }
     except Exception as e:
-        logger.error(f"Erro ao executar agente de otimização: {str(e)}")
+        error_message = f"Erro ao executar agente de otimização: {str(e)}"
+        logger.error(error_message)
         return {
             "success": False,
-            "error": f"Erro ao executar agente de otimização: {str(e)}"
+            "error": error_message
         }
