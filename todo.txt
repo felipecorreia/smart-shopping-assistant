@@ -1,4 +1,4 @@
 
 
 ##próximos passos:
-5. Configurar Variáveis de Ambiente
+8. Executar com Docker

@@ -71,7 +71,16 @@ def format_response(state: ResponseState) -> ResponseState:
             response_parts.append(f"**Preço total: R$ {single_store['total_price']:.2f}**\n\n")
             
             for item in single_store["items"]:
-                response_parts.append(f"- {item['product_name']}: R$ {item['price']:.2f}\n")
+                quantity = item.get("quantity", 1.0)
+                unit_price = item.get("unit_price", item["price"])
+                total_price = item.get("total_price", item["price"])
+                unit = item.get("unit", "")
+                unit_str = f" {unit}" if unit else ""
+                
+                if quantity == 1.0:
+                    response_parts.append(f"- {item['product_name']}: R$ {total_price:.2f}\n")
+                else:
+                    response_parts.append(f"- {item['product_name']} ({quantity}{unit_str}): R$ {total_price:.2f} (R$ {unit_price:.2f} cada)\n")
             
             response_parts.append("\n")
             
@@ -84,7 +93,16 @@ def format_response(state: ResponseState) -> ResponseState:
                 for store in multi_store:
                     response_parts.append(f"### {store['supermarket_name']} - R$ {store['total_price']:.2f}\n")
                     for item in store["items"]:
-                        response_parts.append(f"- {item['product_name']}: R$ {item['price']:.2f}\n")
+                        quantity = item.get("quantity", 1.0)
+                        unit_price = item.get("unit_price", item["price"])
+                        total_price = item.get("total_price", item["price"])
+                        unit = item.get("unit", "")
+                        unit_str = f" {unit}" if unit else ""
+                        
+                        if quantity == 1.0:
+                            response_parts.append(f"- {item['product_name']}: R$ {total_price:.2f}\n")
+                        else:
+                            response_parts.append(f"- {item['product_name']} ({quantity}{unit_str}): R$ {total_price:.2f} (R$ {unit_price:.2f} cada)\n")
                     response_parts.append("\n")
             
             # Adicionar recomendação
@@ -97,7 +115,7 @@ def format_response(state: ResponseState) -> ResponseState:
             formatted_response = "".join(response_parts)
         else:
             # Usar Gemini para formatar resposta
-            model = genai.GenerativeModel('gemini-2.0-flash')
+            model = genai.GenerativeModel(model_name='gemini-2.0-flash') # Ou o modelo que você está usando
             
             # Converter recomendação para texto
             import json
@@ -113,8 +131,8 @@ def format_response(state: ResponseState) -> ResponseState:
             A resposta deve incluir:
             1. Uma saudação amigável
             2. Lista de produtos não encontrados (se houver)
-            3. Opção de compra em um único supermercado, com nome do mercado, preço total e lista de produtos com preços
-            4. Opção de compra em múltiplos supermercados (se economizar dinheiro), com nome dos mercados, preço total, economia e lista de produtos com preços para cada mercado
+            3. Opção de compra em um único supermercado, com nome do mercado, preço total e lista de produtos com quantidades e preços unitários/totais
+            4. Opção de compra em múltiplos supermercados (se economizar dinheiro), com nome dos mercados, preço total, economia e lista de produtos com quantidades e preços unitários/totais para cada mercado
             5. Uma recomendação clara sobre qual opção é melhor
             
             Use formatação Markdown para tornar a resposta mais legível.

@@ -1,0 +1,151 @@
+product_id,product_name,price,supermarket_name,category,unit,quantity,observations,folder_link,valid_until
+1,Chips/Snack Solo,5.49,Empório Big,Snacks,g,42,,"https://example.com/emporio_veggie",2025-04-27
+2,Chips/Snack Solo,5.49,Empório Big,Snacks,g,45,,"https://example.com/emporio_veggie",2025-04-27
+3,Chips/Snack Solo,5.49,Empório Big,Snacks,g,50,,"https://example.com/emporio_veggie",2025-04-27
+4,Frutas Cristalizadas Empório Big,7.49,Empório Big,Doces,g,300,,"https://example.com/emporio_veggie",2025-04-27
+5,Tempero Lemon Pepper Empório Big,6.99,Empório Big,Temperos,g,220,,"https://example.com/emporio_veggie",2025-04-27
+6,Chá Feel Good TP,7.99,Empório Big,Bebidas,l,1,,"https://example.com/emporio_veggie",2025-04-27
+7,Salgadinho de Batata Yes sem Glúten,9.49,Empório Big,Snacks,g,100,,"https://example.com/emporio_veggie",2025-04-27
+8,Pão Francês Schär sem Glúten,11.49,Empório Big,Padaria,g,100,,"https://example.com/emporio_veggie",2025-04-27
+9,Pão de Forma Schar Quinoa e Linhaça sem Glúten,15.99,Empório Big,Padaria,g,200,,"https://example.com/emporio_veggie",2025-04-27
+10,Nozes sem Casca Empório Big,16.90,Empório Big,Grãos e Sementes,g,150,,"https://example.com/emporio_veggie",2025-04-27
+11,Pão de Forma Grani Amici sem Glúten,17.98,Empório Big,Padaria,g,420,,"https://example.com/emporio_veggie",2025-04-27
+12,Castanha de Caju Torrada com Sal Empório Big,19.90,Empório Big,Grãos e Sementes,g,200,,"https://example.com/emporio_veggie",2025-04-27
+13,Hambúrguer Mari Mari Tradicional Congelado,2.49,Empório Big,Congelados,g,60,,"https://example.com/emporio_veggie",2025-04-27
+14,Hambúrguer Mari Mari Legumes Congelado,2.99,Empório Big,Congelados,g,67,,"https://example.com/emporio_veggie",2025-04-27
+15,Bombom Bit Brigadeiro,3.79,Empório Big,Doces,un,1,,"https://example.com/emporio_veggie",2025-04-27
+16,Bombom Bit Brigadeiro,3.79,Empório Big,Doces,g,19,,"https://example.com/emporio_veggie",2025-04-27
+17,Creme de Aveia Nude sem Glúten,5.99,Empório Big,Laticínios e Alternativos,ml,200,,"https://example.com/emporio_veggie",2025-04-27
+18,Conito Vegano,6.79,Empório Big,Doces,g,35,,"https://example.com/emporio_veggie",2025-04-27
+19,Bebida de Aveia Nude sem Glúten,7.49,Empório Big,Bebidas,ml,200,,"https://example.com/emporio_veggie",2025-04-27
+20,Mousse Vida Veg,8.49,Empório Big,Doces,g,200,,"https://example.com/emporio_veggie",2025-04-27
+21,Maionese Legurmê Orgânica,10.49,Empório Big,Condimentos,g,270,,"https://example.com/emporio_veggie",2025-04-27
+22,Ketchup Legurmê Orgânico,10.99,Empório Big,Condimentos,g,270,,"https://example.com/emporio_veggie",2025-04-27
+23,Molho de Tomate Legurmê Orgânico,11.49,Empório Big,Condimentos,g,330,,"https://example.com/emporio_veggie",2025-04-27
+24,Bebida Vegetal Fresca Vida Veg,12.99,Empório Big,Bebidas,ml,700,,"https://example.com/emporio_veggie",2025-04-27
+25,Contra Filé Nosso Beef,39.90,União Supermercados,Carnes,kg,1,,"https://example.com/uniao_supermercados",2025-03-24
+26,Costela Bovina Minga Friboi Reserva,24.90,União Supermercados,Carnes,kg,1,,"https://example.com/uniao_supermercados",2025-03-24
+27,Peito de Frango s/ Osso Congelado,19.80,União Supermercados,Aves,kg,1,,"https://example.com/uniao_supermercados",2025-03-24
+28,Bisteca Suína,16.90,União Supermercados,Suínos,kg,1,,"https://example.com/uniao_supermercados",2025-03-24
+29,Linguiça Suína Seara,17.90,União Supermercados,Embutidos,kg,1,,"https://example.com/uniao_supermercados",2025-03-24
+30,Feijão Carioca Seletto,3.99,União Supermercados,Grãos,kg,1,,"https://example.com/uniao_supermercados",2025-03-24
+31,Arroz Bem Gaúcho Tipo 1,17.90,União Supermercados,Grãos,kg,5,,"https://example.com/uniao_supermercados",2025-03-24
+32,Leite Condensado Campos do Jordão Tp,3.99,União Supermercados,Laticínios,g,395,,"https://example.com/uniao_supermercados",2025-03-24
+33,Café União Pouch,26.90,União Supermercados,Cafés,g,500,,"https://example.com/uniao_supermercados",2025-03-24
+34,Azeite Cocinero Extra Virgem,29.90,União Supermercados,Condimentos,ml,500,,"https://example.com/uniao_supermercados",2025-03-24
+35,Creme de Leite Quatá TP,2.68,União Supermercados,Laticínios,g,200,,"https://example.com/uniao_supermercados",2025-03-24
+36,Atum Ralado Coqueiro,6.98,União Supermercados,Conservas,g,170,,"https://example.com/uniao_supermercados",2025-03-24
+37,Lava Roupas Assim Cartucho,5.99,União Supermercados,Limpeza,g,800,,"https://example.com/uniao_supermercados",2025-03-24
+38,Amaciante Ypê,6.98,União Supermercados,Limpeza,l,2,,"https://example.com/uniao_supermercados",2025-03-24
+39,Melancia,2.59,União Supermercados,Frutas,kg,1,,"https://example.com/uniao_supermercados",2025-03-24
+40,Cenoura,3.79,União Supermercados,Legumes,kg,1,,"https://example.com/uniao_supermercados",2025-03-24
+41,Batata Monalisa,2.98,União Supermercados,Legumes,kg,1,,"https://example.com/uniao_supermercados",2025-03-24
+42,Cebola,2.98,União Supermercados,Legumes,kg,1,,"https://example.com/uniao_supermercados",2025-03-24
+43,Ovos Brancos Preti PVC,14.98,União Supermercados,Ovos,un,20,,"https://example.com/uniao_supermercados",2025-03-24
+44,Paleta Bovina,34.90,Mendonça,Carnes,kg,1,,"https://example.com/alliz",2025-04-24
+45,Patinho Bovino,39.90,Mendonça,Carnes,kg,1,,"https://example.com/alliz",2025-04-24
+46,Asa de Frango Congelado,14.98,Mendonça,Aves,kg,1,,"https://example.com/alliz",2025-04-24
+47,Coxa c/ Sobrecoxa de Frango Congelado,9.98,Mendonça,Aves,kg,1,,"https://example.com/alliz",2025-04-24
+48,Frango Inteiro Congelado Alliz,9.98,Mendonça,Aves,kg,1,,"https://example.com/alliz",2025-04-24
+49,Salsicha Perdigão,10.98,Mendonça,Embutidos,kg,1,,"https://example.com/alliz",2025-04-24
+50,Hambúrguer Perdigão Na Brasa,5.99,Mendonça,Congelados,g,150,,"https://example.com/alliz",2025-04-24
+51,Empanados de Frango c/ Queijo Nacho Xtreme Sadia,7.98,Mendonça,Congelados,g,275,,"https://example.com/alliz",2025-04-24
+52,Bolinho c/ Bacalhau Fast Fish,23.90,Mendonça,Congelados,g,300,,"https://example.com/alliz",2025-04-24
+53,Posta de Cação Megg's,21.90,Mendonça,Congelados,g,800,,"https://example.com/alliz",2025-04-24
+54,Camarão 7 Barbas Fast Fish,45.90,Mendonça,Congelados,g,300,,"https://example.com/alliz",2025-04-24
+55,Bacalhau Desfiado Reymar Congelado,11.98,Mendonça,Congelados,g,500,,"https://example.com/alliz",2025-04-24
+56,Pão de Alho Zinho Bolinha,8.98,Mendonça,Padaria,g,300,,"https://example.com/alliz",2025-04-24
+57,Talharim Mezzani,11.98,Mendonça,Massas,g,500,,"https://example.com/alliz",2025-04-24
+58,Suco de Laranja Prats,14.98,Mendonça,Bebidas,ml,900,,"https://example.com/alliz",2025-04-24
+59,Requeijão Qualy Tradicional,7.99,Mendonça,Laticínios,g,200,,"https://example.com/alliz",2025-04-24
+60,Peito de Peru Perdigão,4.49,Mendonça,Frios e Laticínios,g,100,,"https://example.com/alliz",2025-04-24
+61,Creme de Ricota Président,6.98,Mendonça,Laticínios,g,200,,"https://example.com/alliz",2025-04-24
+62,Manteiga Président Pote,13.98,Mendonça,Laticínios,g,200,,"https://example.com/alliz",2025-04-24
+63,Queijo Président Minas Padrão Fatiado,9.98,Mendonça,Laticínios,g,150,,"https://example.com/alliz",2025-04-24
+64,Batata Pringles,8.98,Mendonça,Snacks,g,104,,"https://example.com/alliz",2025-04-24
+65,Bebida Láctea Chocolate Quatá Kids,0.99,Mendonça,Bebidas,ml,200,,"https://example.com/alliz",2025-04-24
+66,Extrato de Tomate Elefante Sachet,5.79,Mendonça,Condimentos,g,300,,"https://example.com/alliz",2025-04-24
+67,Sardinha Coqueiro,4.39,Mendonça,Conservas,g,125,,"https://example.com/alliz",2025-04-24
+68,Gin Seagers,34.90,Mendonça,Bebidas Alcoólicas,l,1,,"https://example.com/alliz",2025-04-24
+69,Whisky Ballantines Finest,57.90,Mendonça,Bebidas Alcoólicas,ml,750,,"https://example.com/alliz",2025-04-24
+70,Absorvente Intimus Gel Cobertura Seca c/ Abas,3.79,Mendonça,Higiene Pessoal,un,8,,"https://example.com/alliz",2025-04-24
+71,Logurte Batavo,13.98,Mendonça,Laticínios,kg,1.15,,"https://example.com/alliz",2025-04-24
+72,logurte Batavo Natural,2.99,Mendonça,Laticínios,g,170,,"https://example.com/alliz",2025-04-24
+73,Inseticida Aerosol Mat Inset,10.98,Mendonça,Limpeza,ml,360,,"https://example.com/alliz",2025-04-24
+74,Saponáceo Cremoso Ypê,3.49,Mendonça,Limpeza,g,300,,"https://example.com/alliz",2025-04-24
+75,Desinfetante Ypê Bak,7.49,Mendonça,Limpeza,l,2,,"https://example.com/alliz",2025-04-24
+76,Lava Roupas Iris,3.49,Mendonça,Limpeza,g,800,,"https://example.com/alliz",2025-04-24
+77,Ketchup Heinz,9.98,Mendonça,Condimentos,g,397,,"https://example.com/alliz",2025-04-24
+78,Biscoito Galo,3.98,Mendonça,Biscoitos,g,360,,"https://example.com/alliz",2025-04-24
+79,Vinho Chileno Gran Maestre Gran Reserva,39.80,Mendonça,Bebidas Alcoólicas,ml,750,,"https://example.com/alliz",2025-04-24
+80,Vinho Chalise,9.98,Mendonça,Bebidas Alcoólicas,ml,750,,"https://example.com/alliz",2025-04-24
+81,Cerveja Petra Puro Malte Lata,2.79,Mendonça,Bebidas Alcoólicas,ml,350,,"https://example.com/alliz",2025-04-24
+82,Cerveja Spaten Lata,3.29,Mendonça,Bebidas Alcoólicas,ml,350,,"https://example.com/alliz",2025-04-24
+83,Cerveja Heineken Lata,3.29,Mendonça,Bebidas Alcoólicas,ml,269,,"https://example.com/alliz",2025-04-24
+84,Sabonete Albany,1.29,Mendonça,Higiene Pessoal,g,85,,"https://example.com/alliz",2025-04-24
+85,Desodorante p/ Pés Rexona,3.79,Mendonça,Higiene Pessoal,ml,153,,"https://example.com/alliz",2025-04-24
+86,Sobrecoxa de Frango Congelado Adoro IQF,11.90,Spani,Aves,kg,1,,"https://example.com/spani",2025-04-28
+87,Carne Bovina Moída Congelada Friboi,11.49,Spani,Carnes,g,500,,"https://example.com/spani",2025-04-28
+88,Bisteca Suína Frimesa Congelada,17.99,Spani,Suínos,kg,1,,"https://example.com/spani",2025-04-28
+89,Carne Seca Dianteiro Friboi,19.90,Spani,Carnes,g,500,,"https://example.com/spani",2025-04-28
+90,Linguiça Toscana Frimesa,17.49,Spani,Embutidos,kg,1,,"https://example.com/spani",2025-04-28
+91,Salsicha p/ Hot Dog Congelada Copacol,7.99,Spani,Embutidos,kg,1,,"https://example.com/spani",2025-04-28
+92,Empanado Tekitos Seara Frango/ Queijo,16.90,Spani,Congelados,kg,1,,"https://example.com/spani",2025-04-28
+93,Pizza Aurora Sabores,11.90,Spani,Congelados,un,1,440/460g,"https://example.com/spani",2025-04-28
+94,Hambúrguer Texas Burger Seara,12.90,Spani,Congelados,g,672,,"https://example.com/spani",2025-04-28
+95,Mortadela Marba Tradicional,12.90,Spani,Embutidos,kg,1,,"https://example.com/spani",2025-04-28
+96,Queijo Mussarela Deale,35.90,Spani,Laticínios,kg,1,,"https://example.com/spani",2025-04-28
+97,Presunto Cozido Aurora,21.90,Spani,Frios,kg,1,,"https://example.com/spani",2025-04-28
+98,Requeijão Pote Itambé Tradicional,13.90,Spani,Laticínios,g,400,,"https://example.com/spani",2025-04-28
+99,Manteiga Teixeira com Sal,9.98,Spani,Laticínios,g,200,,"https://example.com/spani",2025-04-28
+100,Iogurte Líquido Itambé Sabores,9.99,Spani,Laticínios,g,1150,,"https://example.com/spani",2025-04-28
+101,Sorvete Jundiá Sabores,27.90,Spani,Congelados,l,2,,"https://example.com/spani",2025-04-28
+102,Cenoura,3.99,Spani,Legumes,kg,1,,"https://example.com/spani",2025-04-28
+103,Batata Doce Roxa,2.99,Spani,Legumes,kg,1,,"https://example.com/spani",2025-04-28
+104,Maçã Pacote,8.99,Spani,Frutas,kg,1,,"https://example.com/spani",2025-04-28
+105,Banana Nanica,3.79,Spani,Frutas,kg,1,,"https://example.com/spani",2025-04-28
+106,Leite Longa Vida Hércules Tp.,4.59,Spani,Laticínios,l,1,,"https://example.com/spani",2025-04-28
+107,Café 3 Corações,29.90,Spani,Cafés,g,500,,"https://example.com/spani",2025-04-28
+108,Leite Condensado Itambé Lt.,7.49,Spani,Laticínios,g,395,a partir de 6 unidades,"https://example.com/spani",2025-04-28
+109,Leite Condensado Itambé Lt.,7.99,Spani,Laticínios,g,395,unidade,"https://example.com/spani",2025-04-28
+110,Arroz Prato Fino Tipo 1,25.90,Spani,Grãos,kg,5,,"https://example.com/spani",2025-04-28
+111,Achocolatado em Pó Toddy Original Sachê,13.99,Spani,Achocolatados,g,700,a partir de 4 unidades,"https://example.com/spani",2025-04-28
+112,Achocolatado em Pó Toddy Original Sachê,14.99,Spani,Achocolatados,g,700,unidade,"https://example.com/spani",2025-04-28
+113,Refrigerante Coca-Cola Original/ S/ Açúcar Pet,1.59,Spani,Bebidas,ml,200,,"https://example.com/spani",2025-04-28
+114,Cerveja Brahma Chopp Lt.,2.89,Spani,Bebidas Alcoólicas,ml,350,,"https://example.com/spani",2025-04-28
+115,Detergente Líquido Triex,1.38,Spani,Limpeza,ml,500,a partir de 6 unidades,"https://example.com/spani",2025-04-28
+116,Detergente Líquido Triex,1.49,Spani,Limpeza,ml,500,unidade,"https://example.com/spani",2025-04-28
+117,Lava Roupas em Pó Omo Lavagem Perfeita,24.88,Spani,Limpeza,kg,2.4,,"https://example.com/spani",2025-04-28
+118,Peito de Frango s/ Osso Congelado,18.90,Spani,Aves,kg,1,,"https://example.com/spani",2025-04-28
+119,Fralda Pom Pom Clássica,21.90,Spani,Higiene Pessoal,un,1,a partir de 3 unidades P-36/M-34/G-30/XG-24/XXG-22,"https://example.com/spani",2025-04-28
+120,Fralda Pom Pom Clássica,22.90,Spani,Higiene Pessoal,un,1,unidade P-36/M-34/G-30/XG-24/XXG-22,"https://example.com/spani",2025-04-28
+121,Molho Salsarettti Tradicional,1.39,Spani,Condimentos,g,300,a partir de 6 unidades,"https://example.com/spani",2025-04-28
+122,Molho Salsarettti Tradicional,1.59,Spani,Condimentos,g,300,unidade,"https://example.com/spani",2025-04-28
+123,Azeitonas Verdes Vale Fértil Pacote,3.99,Spani,Conservas,g,120,,"https://example.com/spani",2025-04-28
+124,Mix Bolo Dona Benta,4.99,Spani,Misturas,g,450,a partir de 4 unidades Exceto Especiais,"https://example.com/spani",2025-04-28
+125,Mix Bolo Dona Benta,5.89,Spani,Misturas,g,450,unidade Exceto Especiais,"https://example.com/spani",2025-04-28
+126,Chanty Mix Amélia Tp.,4.89,Spani,Laticínios,ml,200,a partir de 6 unidades,"https://example.com/spani",2025-04-28
+127,Chanty Mix Amélia Tp.,5.49,Spani,Laticínios,ml,200,unidade,"https://example.com/spani",2025-04-28
+128,Chá Matte Leão Granel Natural,5.79,Spani,Bebidas,g,250,a partir de 3 unidades,"https://example.com/spani",2025-04-28
+129,Chá Matte Leão Granel Natural,6.89,Spani,Bebidas,g,250,unidade,"https://example.com/spani",2025-04-28
+130,Biscoito Oreo Sabores,2.69,Spani,Biscoitos,g,90,a partir de 6 unidades,"https://example.com/spani",2025-04-28
+131,Biscoito Oreo Sabores,2.89,Spani,Biscoitos,g,90,unidade,"https://example.com/spani",2025-04-28
+132,Água de Coco Sococo Tp.,10.90,Spani,Bebidas,l,1,,"https://example.com/spani",2025-04-28
+133,Cerveja Itaipava Lt.,2.39,Spani,Bebidas Alcoólicas,ml,350,,"https://example.com/spani",2025-04-28
+134,Atum Coqueiro em Óleo Pedaço Natural Lt.,8.69,Spani,Conservas,g,170,a partir de 6 unidades,"https://example.com/spani",2025-04-28
+135,Atum Coqueiro em Óleo Pedaço Natural Lt.,8.99,Spani,Conservas,g,170,unidade,"https://example.com/spani",2025-04-28
+136,Farofa Kisabor,2.99,Spani,Condimentos,g,400,,"https://example.com/spani",2025-04-28
+137,Azeite Extra Virgem Andorinha Vd.,32.90,Spani,Condimentos,ml,500,,"https://example.com/spani",2025-04-28
+138,Biscoito Adria Folhata Manteiga,2.79,Spani,Biscoitos,g,170,a partir de 6 unidades,"https://example.com/spani",2025-04-28
+139,Biscoito Adria Folhata Manteiga,2.99,Spani,Biscoitos,g,170,unidade,"https://example.com/spani",2025-04-28
+140,Leite em Pó Italac Integral Pacote,14.89,Spani,Laticínios,g,400,a partir de 5 unidades,"https://example.com/spani",2025-04-28
+141,Leite em Pó Italac Integral Pacote,15.99,Spani,Laticínios,g,400,unidade,"https://example.com/spani",2025-04-28
+142,Biscoito Marilan Maizena,4.49,Spani,Biscoitos,g,350,a partir de 6 unidades,"https://example.com/spani",2025-04-28
+143,Biscoito Marilan Maizena,4.69,Spani,Biscoitos,g,350,unidade,"https://example.com/spani",2025-04-28
+144,Wafer com Chocolate Cookies Hershey's Mais Pack,11.37,Spani,Biscoitos,g,102,,"https://example.com/spani",2025-04-28
+145,Amanditas Chocolate,11.99,Spani,Biscoitos,g,200,,"https://example.com/spani",2025-04-28
+146,Suco Natural One Laranja Refrig,19.90,Spani,Bebidas,l,2,,"https://example.com/spani",2025-04-28
+147,Refrigerante Itubaina Ln.,2.59,Spani,Bebidas,ml,355,,"https://example.com/spani",2025-04-28
+148,Refrigerante Sprite Pet,7.89,Spani,Bebidas,l,2,,"https://example.com/spani",2025-04-28
+149,Cerveja Heineken Ln.,4.19,Spani,Bebidas Alcoólicas,ml,250,,"https://example.com/spani",2025-04-28
+150,Bebida Smirnoff Ice Red Lt.,5.29,Spani,Bebidas Alcoólicas,ml,275,,"https://example.com/spani",2025-04-28
