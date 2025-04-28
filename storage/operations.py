@@ -5,11 +5,11 @@ Módulo para operações de alto nível com o BigQuery.
 import os
 import logging
 import csv
-from typing import List, Dict, Any, Optional
+from typing import List, Dict, Any, Optional, Set
 import pandas as pd
 
 from storage.bigquery_client import BigQueryClient
-from data.schema import ProductSchema
+from data.schemas import ProductSchema
 
 # Configurar logging
 logging.basicConfig(
@@ -197,3 +197,151 @@ class BigQueryOperations:
         except Exception as e:
             logger.error(f"Erro ao obter melhor supermercado: {str(e)}")
             return {"success": False, "error": str(e)}
+    
+    def get_product_variants(self, generic_name: str) -> List[Dict[str, Any]]:
+        """
+        Obtém variantes específicas de um produto genérico.
+        
+        Args:
+            generic_name: Nome genérico do produto (ex: "frango")
+            
+        Returns:
+            Lista de dicionários com variantes do produto
+        """
+        try:
+            # Consultar o banco de dados para encontrar produtos que contenham o nome genérico
+            query = f"""
+            SELECT DISTINCT product_name, unit, quantity
+            FROM `{self.bq_client.project_id}.{self.bq_client.dataset_id}.{self.bq_client.table_id}`
+            WHERE LOWER(product_name) LIKE LOWER('%{generic_name}%')
+            ORDER BY product_name
+            LIMIT 10
+            """
+            
+            query_job = self.bq_client.client.query(query)
+            results = query_job.result()
+            
+            variants = []
+            for row in results:
+                variants.append({
+                    "product_name": row.product_name,
+                    "unit": row.unit,
+                    "quantity": row.quantity
+                })
+            
+            logger.info(f"Encontradas {len(variants)} variantes para o produto '{generic_name}'")
+            return variants
+        except Exception as e:
+            logger.error(f"Erro ao obter variantes do produto '{generic_name}': {str(e)}")
+            return []
+    
+    def get_standard_package_info(self, product_name: str) -> Dict[str, Any]:
+        """
+        Obtém informações sobre embalagens padrão de um produto.
+        
+        Args:
+            product_name: Nome do produto (ex: "arroz")
+            
+        Returns:
+            Dicionário com informações da embalagem padrão
+        """
+        try:
+            # Consultar o banco de dados para encontrar informações de embalagem padrão
+            query = f"""
+            SELECT product_name, unit, quantity, COUNT(*) as count
+            FROM `{self.bq_client.project_id}.{self.bq_client.dataset_id}.{self.bq_client.table_id}`
+            WHERE LOWER(product_name) LIKE LOWER('%{product_name}%')
+            GROUP BY product_name, unit, quantity
+            ORDER BY count DESC
+            LIMIT 1
+            """
+            
+            query_job = self.bq_client.client.query(query)
+            results = query_job.result()
+            
+            for row in results:
+                return {
+                    "product_name": row.product_name,
+                    "standard_unit": row.unit,
+                    "standard_quantity": row.quantity,
+                    "is_packaged": True
+                }
+            
+            # Se não encontrar informações específicas, retorna valores padrão
+            return {
+                "product_name": product_name,
+                "standard_unit": None,
+                "standard_quantity": 1.0,
+                "is_packaged": False
+            }
+        except Exception as e:
+            logger.error(f"Erro ao obter informações de embalagem para '{product_name}': {str(e)}")
+            return {
+                "product_name": product_name,
+                "standard_unit": None,
+                "standard_quantity": 1.0,
+                "is_packaged": False
+            }
+    
+    def get_common_products(self) -> List[str]:
+        """
+        Obtém uma lista de produtos comuns no banco de dados.
+        
+        Returns:
+            Lista de nomes de produtos comuns
+        """
+        try:
+            query = f"""
+            SELECT product_name, COUNT(*) as count
+            FROM `{self.bq_client.project_id}.{self.bq_client.dataset_id}.{self.bq_client.table_id}`
+            GROUP BY product_name
+            ORDER BY count DESC
+            LIMIT 50
+            """
+            
+            query_job = self.bq_client.client.query(query)
+            results = query_job.result()
+            
+            products = []
+            for row in results:
+                products.append(row.product_name)
+            
+            logger.info(f"Encontrados {len(products)} produtos comuns")
+            return products
+        except Exception as e:
+            logger.error(f"Erro ao obter produtos comuns: {str(e)}")
+            return []
+    
+    def get_product_categories(self) -> Dict[str, List[str]]:
+        """
+        Obtém categorias de produtos e exemplos de cada categoria.
+        
+        Returns:
+            Dicionário com categorias e exemplos
+        """
+        try:
+            query = f"""
+            SELECT category, product_name
+            FROM `{self.bq_client.project_id}.{self.bq_client.dataset_id}.{self.bq_client.table_id}`
+            WHERE category IS NOT NULL
+            GROUP BY category, product_name
+            ORDER BY category, product_name
+            LIMIT 100
+            """
+            
+            query_job = self.bq_client.client.query(query)
+            results = query_job.result()
+            
+            categories = {}
+            for row in results:
+                if row.category not in categories:
+                    categories[row.category] = []
+                
+                if row.product_name not in categories[row.category]:
+                    categories[row.category].append(row.product_name)
+            
+            logger.info(f"Encontradas {len(categories)} categorias de produtos")
+            return categories
+        except Exception as e:
+            logger.error(f"Erro ao obter categorias de produtos: {str(e)}")
+            return {}
