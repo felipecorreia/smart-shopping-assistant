@@ -1,12 +1,12 @@
 """
-Agente para otimização de compras.
+Agente para otimização de compras (versão simplificada sem cálculo de quantidades).
 """
 
 import os
 import logging
 from typing import Dict, Any, List, Optional, TypedDict, Annotated, Literal
 from langgraph.graph import StateGraph, END
-from data.models import SupermarketOption, PriceOption, ShoppingRecommendation, ShoppingList
+from data.models import SupermarketOption, PriceOption, ShoppingRecommendation
 
 # Configurar logging
 logging.basicConfig(
@@ -15,18 +15,18 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-# Definir o schema de estado
+# Definir o schema de estado (atualizado para incluir total_requested_items)
 class OptimizationState(TypedDict):
     """Estado do agente de otimização."""
-    shopping_list: Dict[str, Any]  # Adicionado para acessar quantidades
-    price_options: Dict[str, List[Dict[str, Any]]]
-    products_not_found: List[str]
+    price_options: Dict[str, List[Dict[str, Any]]]  # Opções de preço
+    products_not_found: List[str]  # Produtos não encontrados
+    total_requested_items: int  # Total de itens solicitados originalmente
     recommendation: Optional[Dict[str, Any]]
     error: Optional[str]
 
 def find_best_single_store(state: OptimizationState) -> OptimizationState:
     """
-    Encontra a melhor opção de compra em um único supermercado.
+    Encontra a melhor opção de compra em um único supermercado (baseado na soma dos preços unitários).
     
     Args:
         state: Estado atual
@@ -36,92 +36,101 @@ def find_best_single_store(state: OptimizationState) -> OptimizationState:
     """
     try:
         price_options = state["price_options"]
-        shopping_list = state.get("shopping_list", {})
         products_not_found = state.get("products_not_found", [])
+        total_requested_items = state.get("total_requested_items", 0)  # Obter o total de itens
         
-        # Obter as quantidades da lista de compras
-        quantities = {}
-        for item in shopping_list.get("items", []):
-            quantities[item["product_name"]] = item.get("quantity", 1.0)
-        
-        # Calcular o preço total para cada supermercado
+        # Calcular a soma dos preços unitários para cada supermercado
+        # Considerando apenas os produtos que estão disponíveis em cada supermercado
         supermarket_totals = {}
-        supermarket_items = {}
-        
+        supermarket_items_found = {}
+        all_supermarkets = set()
+
+        # Primeiro, identificar todos os supermercados que têm pelo menos um item
         for product_name, options in price_options.items():
-            # Obter a quantidade do produto (padrão: 1.0)
-            quantity = quantities.get(product_name, 1.0)
-            
             for option in options:
-                supermarket_name = option["supermarket_name"]
-                # Multiplicar o preço pela quantidade
-                price = option["price"] * quantity
+                all_supermarkets.add(option["supermarket_name"])
+
+        # Agora, calcular o total para cada supermercado, somando os preços dos itens disponíveis nele
+        for supermarket_name in all_supermarkets:
+            current_total = 0.0
+            items_in_this_store = []
+            products_in_this_store = set()
+            
+            # Iterar por todos os produtos da lista original
+            for product_name, options in price_options.items():
+                # Encontrar a opção (se existir) para este produto neste supermercado
+                option_in_this_store = None
+                for option in options:
+                    if option["supermarket_name"] == supermarket_name:
+                        option_in_this_store = option
+                        break # Pega a primeira ocorrência (assumindo que não há duplicatas por produto/supermercado)
                 
-                if supermarket_name not in supermarket_totals:
-                    supermarket_totals[supermarket_name] = 0
-                    supermarket_items[supermarket_name] = []
-                
-                # Criar uma cópia da opção com o preço unitário e total
-                item_option = option.copy()
-                item_option["unit_price"] = option["price"]
-                item_option["quantity"] = quantity
-                item_option["total_price"] = price
-                
-                supermarket_totals[supermarket_name] += price
-                supermarket_items[supermarket_name].append(item_option)
+                if option_in_this_store:
+                    price = option_in_this_store["price"] # Usar o preço unitário diretamente
+                    current_total += price
+                    
+                    # Adicionar item formatado à lista deste supermercado
+                    items_in_this_store.append(option_in_this_store)
+                    products_in_this_store.add(product_name)
+
+            # Armazenar o total e os itens encontrados para este supermercado
+            if items_in_this_store: # Apenas considerar supermercados onde encontramos itens
+                supermarket_totals[supermarket_name] = current_total
+                supermarket_items_found[supermarket_name] = items_in_this_store
         
         if not supermarket_totals:
-            error_message = "Não foi possível calcular os totais para nenhum supermercado."
+            error_message = "Não foi possível calcular os totais (soma de preços unitários) para nenhum supermercado."
             logger.error(error_message)
             return {
-                "shopping_list": shopping_list,
                 "price_options": price_options,
                 "products_not_found": products_not_found,
+                "total_requested_items": total_requested_items,  # Manter o total de itens
                 "recommendation": None,
                 "error": error_message
             }
 
-        # Encontrar o supermercado com o menor preço total
+        # Encontrar o supermercado com a menor soma de preços unitários
         best_supermarket = min(supermarket_totals.items(), key=lambda x: x[1])
         best_supermarket_name = best_supermarket[0]
         best_supermarket_total = best_supermarket[1]
         
-        # Criar opção de supermercado
+        # Criar opção de supermercado com a lista CORRETA de itens encontrados nele
         single_store_option = {
             "supermarket_name": best_supermarket_name,
-            "total_price": best_supermarket_total,
-            "items": supermarket_items[best_supermarket_name]
+            "total_price": best_supermarket_total, # Representa a soma dos preços unitários
+            "items": supermarket_items_found[best_supermarket_name] # Usar a lista de itens encontrada
         }
         
-        logger.info(f"Melhor supermercado: {best_supermarket_name}, Preço total: {best_supermarket_total}")
+        logger.info(f"Melhor supermercado (soma unitária): {best_supermarket_name}, Soma total: {best_supermarket_total:.2f}")
         
         return {
-            "shopping_list": shopping_list,
             "price_options": price_options,
             "products_not_found": products_not_found,
+            "total_requested_items": total_requested_items,  # Manter o total de itens
             "recommendation": {
                 "single_store_option": single_store_option,
-                "multi_store_option": [],
+                "multi_store_option": [],  # Será preenchido pelo próximo nó
                 "savings": 0.0,
                 "savings_percentage": 0.0,
-                "products_not_found": products_not_found
+                "products_not_found": products_not_found,
+                "total_requested_items": total_requested_items  # Incluir o total de itens na recomendação
             },
             "error": None
         }
     except Exception as e:
-        error_message = f"Erro ao encontrar melhor supermercado: {str(e)}"
-        logger.error(error_message)
+        error_message = f"Erro ao encontrar melhor supermercado (soma unitária): {str(e)}"
+        logger.exception(error_message) # Usar exception para logar traceback
         return {
-            "shopping_list": state.get("shopping_list", {}),
             "price_options": state.get("price_options", {}),
             "products_not_found": state.get("products_not_found", []),
+            "total_requested_items": state.get("total_requested_items", 0),  # Manter o total de itens
             "recommendation": None,
             "error": error_message
         }
 
 def find_best_multi_store(state: OptimizationState) -> OptimizationState:
     """
-    Encontra a melhor opção de compra em múltiplos supermercados.
+    Encontra a melhor opção de compra em múltiplos supermercados (baseado na soma dos menores preços unitários).
     
     Args:
         state: Estado atual
@@ -132,54 +141,42 @@ def find_best_multi_store(state: OptimizationState) -> OptimizationState:
     try:
         price_options = state["price_options"]
         recommendation = state["recommendation"]
-        shopping_list = state.get("shopping_list", {})
         products_not_found = state.get("products_not_found", [])
+        total_requested_items = state.get("total_requested_items", 0)  # Obter o total de itens
         
         if not recommendation:
             raise ValueError("Recomendação de único supermercado não encontrada")
         
         single_store_option = recommendation["single_store_option"]
-        single_store_total = single_store_option["total_price"]
+        single_store_total = single_store_option["total_price"] # Soma unitária do melhor supermercado único
         
-        # Obter as quantidades da lista de compras
-        quantities = {}
-        for item in shopping_list.get("items", []):
-            quantities[item["product_name"]] = item.get("quantity", 1.0)
-        
-        # Encontrar o melhor preço para cada produto
+        # Encontrar o menor preço unitário para cada produto
         best_prices = {}
         for product_name, options in price_options.items():
-            best_option = min(options, key=lambda x: x["price"])
-            best_prices[product_name] = best_option
+            if options: # Garante que há opções para o produto
+                best_option = min(options, key=lambda x: x["price"])
+                best_prices[product_name] = best_option
         
         # Agrupar por supermercado
         supermarket_items = {}
-        multi_store_total = 0.0
+        multi_store_total = 0.0 # Soma dos menores preços unitários
         
         for product_name, option in best_prices.items():
             supermarket_name = option["supermarket_name"]
-            # Obter a quantidade do produto (padrão: 1.0)
-            quantity = quantities.get(product_name, 1.0)
-            # Multiplicar o preço pela quantidade
-            price = option["price"] * quantity
+            price = option["price"] # Preço unitário
             
             if supermarket_name not in supermarket_items:
                 supermarket_items[supermarket_name] = []
             
-            # Criar uma cópia da opção com o preço unitário e total
-            item_option = option.copy()
-            item_option["unit_price"] = option["price"]
-            item_option["quantity"] = quantity
-            item_option["total_price"] = price
-            
-            supermarket_items[supermarket_name].append(item_option)
+            # Adicionar a opção completa (sem modificar)
+            supermarket_items[supermarket_name].append(option)
             multi_store_total += price
         
         # Criar opções de supermercado
         multi_store_options = []
         
         for supermarket_name, items in supermarket_items.items():
-            total_price = sum(item["total_price"] for item in items)
+            total_price = sum(item["price"] for item in items) # Soma unitária por supermercado
             
             multi_store_options.append({
                 "supermarket_name": supermarket_name,
@@ -187,31 +184,32 @@ def find_best_multi_store(state: OptimizationState) -> OptimizationState:
                 "items": items
             })
         
-        # Calcular economia
+        # Calcular economia (comparando soma unitária)
         savings = single_store_total - multi_store_total
         savings_percentage = (savings / single_store_total) * 100 if single_store_total > 0 else 0.0
         
-        logger.info(f"Economia com múltiplos supermercados: {savings:.2f} ({savings_percentage:.2f}%)")
+        logger.info(f"Economia com múltiplos supermercados (soma unitária): {savings:.2f} ({savings_percentage:.2f}%)")
         
         # Atualizar recomendação
         recommendation["multi_store_option"] = multi_store_options
         recommendation["savings"] = savings
         recommendation["savings_percentage"] = savings_percentage
+        recommendation["total_requested_items"] = total_requested_items  # Garantir que o total está na recomendação
         
         return {
-            "shopping_list": shopping_list,
             "price_options": price_options,
             "products_not_found": products_not_found,
+            "total_requested_items": total_requested_items,  # Manter o total de itens
             "recommendation": recommendation,
             "error": None
         }
     except Exception as e:
-        error_message = f"Erro ao encontrar melhor opção de múltiplos supermercados: {str(e)}"
-        logger.error(error_message)
+        error_message = f"Erro ao encontrar melhor opção de múltiplos supermercados (soma unitária): {str(e)}"
+        logger.exception(error_message) # Usar exception para logar traceback
         return {
-            "shopping_list": state.get("shopping_list", {}),
             "price_options": state.get("price_options", {}),
             "products_not_found": state.get("products_not_found", []),
+            "total_requested_items": state.get("total_requested_items", 0),  # Manter o total de itens
             "recommendation": state.get("recommendation"),
             "error": error_message
         }
@@ -243,15 +241,15 @@ def create_graph() -> StateGraph:
 def run_optimization_agent(
     price_options: Dict[str, List[Dict[str, Any]]],
     products_not_found: List[str],
-    shopping_list: Dict[str, Any]  # Adicionado para receber a lista de compras
+    total_requested_items: int = 0,  # Novo parâmetro com valor padrão
 ) -> Dict[str, Any]:
     """
-    Executa o agente de otimização para encontrar as melhores opções de compra.
+    Executa o agente de otimização para encontrar as melhores opções de compra (comparação de preços unitários).
     
     Args:
         price_options: Opções de preço para cada produto
         products_not_found: Lista de produtos não encontrados
-        shopping_list: Lista de compras com quantidades
+        total_requested_items: Total de itens solicitados originalmente
         
     Returns:
         Dicionário com resultado da operação
@@ -262,9 +260,9 @@ def run_optimization_agent(
         
         # Executar grafo
         result = graph.invoke({
-            "shopping_list": shopping_list,
             "price_options": price_options,
             "products_not_found": products_not_found,
+            "total_requested_items": total_requested_items,  # Incluir o total de itens
             "recommendation": None,
             "error": None
         })
@@ -286,8 +284,8 @@ def run_optimization_agent(
             "recommendation": result["recommendation"]
         }
     except Exception as e:
-        error_message = f"Erro ao executar agente de otimização: {str(e)}"
-        logger.error(error_message)
+        error_message = f"Erro ao executar agente de otimização (simplificado): {str(e)}"
+        logger.exception(error_message) # Usar exception para logar traceback
         return {
             "success": False,
             "error": error_message

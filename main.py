@@ -68,114 +68,152 @@ class ShoppingAssistant:
         formatted_items = []
         for i, item in enumerate(items, 1):
             product_name = item.get("product_name", "")
-            quantity = item.get("quantity", 1.0)
-            unit = item.get("unit", "")
-            
-            if unit:
-                formatted_items.append(f"{i}. {product_name} - {quantity} {unit}")
-            else:
-                formatted_items.append(f"{i}. {product_name} - {quantity}")
+            # Versão simplificada: não mostrar quantidades
+            formatted_items.append(f"{i}. {product_name}")
         
         return "\n".join(formatted_items)
-    
-    def _confirm_shopping_list(self, shopping_list: Dict[str, Any]) -> Dict[str, Any]:
+
+    def _handle_ambiguous_item(self, item_index: int, item: Dict[str, Any], variants: List[Dict[str, Any]]) -> Optional[Dict[str, Any]]:
         """
-        Solicita confirmação da lista de compras ao usuário.
+        Solicita ao usuário que escolha uma variante para um item ambíguo.
+        
+        Args:
+            item_index: Índice do item na lista
+            item: Dicionário do item ambíguo
+            variants: Lista de variantes encontradas no DB
+            
+        Returns:
+            Item atualizado com a variante escolhida ou None se cancelado
+        """
+        print(f"\n--- Item Ambiguidade: {item.get('product_name')} ---")
+        print("Encontramos várias opções para este item. Por favor, escolha uma:")
+        for i, variant in enumerate(variants, 1):
+            print(f"{i}. {variant.get('product_name')}")
+        print(f"{len(variants) + 1}. Manter \"{item.get('product_name')}\" como está")
+        print(f"{len(variants) + 2}. Remover este item da lista")
+        
+        while True:
+            try:
+                choice = int(input("Sua escolha (número): ").strip())
+                if 1 <= choice <= len(variants):
+                    chosen_variant = variants[choice - 1]
+                    # Atualiza o item com a variante escolhida
+                    item["product_name"] = chosen_variant["product_name"]
+                    print(f"Item {item_index + 1} atualizado para: {item['product_name']}")
+                    return item
+                elif choice == len(variants) + 1:
+                    print(f"Mantendo \"{item.get('product_name')}\" como está.")
+                    return item # Retorna o item original
+                elif choice == len(variants) + 2:
+                    print(f"Removendo \"{item.get('product_name')}\" da lista.")
+                    return None # Indica que o item deve ser removido
+                else:
+                    print("Escolha inválida.")
+            except ValueError:
+                print("Entrada inválida. Por favor, digite um número.")
+
+    def _confirm_shopping_list(self, shopping_list: Dict[str, Any], ambiguous_items: Dict[str, List[Dict[str, Any]]]) -> Dict[str, Any]:
+        """
+        Solicita confirmação da lista de compras ao usuário, tratando ambiguidades.
         
         Args:
             shopping_list: Lista de compras refinada
+            ambiguous_items: Dicionário de itens ambíguos e suas variantes
             
         Returns:
             Lista de compras confirmada ou modificada
         """
-        print("\n=== CONFIRME SUA LISTA DE COMPRAS ===")
-        print("Por favor, verifique se os itens abaixo estão corretos:")
-        print(self._format_shopping_list_for_display(shopping_list))
-        print("\nOpções:")
-        print("1. Confirmar lista (pressione Enter)")
-        print("2. Modificar um item (digite o número do item)")
-        print("3. Adicionar um item (digite 'a')")
-        print("4. Remover um item (digite 'r' seguido do número do item, ex: r2)")
-        print("5. Cancelar (digite 'c')")
+        current_list = shopping_list.copy()
+        items = current_list.get("items", [])
         
-        response = input("\nSua escolha: ").strip()
-        
-        if not response:  # Confirmação (Enter)
-            return shopping_list
-        
-        elif response.lower() == 'c':  # Cancelar
-            return {"items": []}
-        
-        elif response.lower() == 'a':  # Adicionar item
-            new_item = {}
-            new_item["product_name"] = input("Nome do produto: ").strip()
+        # Resolver ambiguidades primeiro
+        items_to_remove_indices = []
+        if ambiguous_items:
+            print("\n=== RESOLVER AMBIGUIDADES ===")
+            for i, item in enumerate(items):
+                product_name = item.get("product_name")
+                if product_name in ambiguous_items:
+                    updated_item = self._handle_ambiguous_item(i, item.copy(), ambiguous_items[product_name])
+                    if updated_item:
+                        items[i] = updated_item
+                    else:
+                        items_to_remove_indices.append(i)
             
-            try:
-                new_item["quantity"] = float(input("Quantidade (número): ").strip())
-            except ValueError:
+            # Remover itens marcados para remoção (em ordem reversa para não afetar índices)
+            if items_to_remove_indices:
+                for index in sorted(items_to_remove_indices, reverse=True):
+                    del items[index]
+                current_list["items"] = items # Atualiza a lista
+
+        # Loop de confirmação/modificação
+        while True:
+            print("\n=== CONFIRME SUA LISTA DE COMPRAS ===")
+            print("Por favor, verifique se os itens abaixo estão corretos:")
+            print(self._format_shopping_list_for_display(current_list))
+            print("\nOpções:")
+            print("1. Confirmar lista (pressione Enter)")
+            print("2. Modificar um item (digite o número do item)")
+            print("3. Adicionar um item (digite 'a')")
+            print("4. Remover um item (digite 'r' seguido do número do item, ex: r2)")
+            print("5. Cancelar (digite 'c')")
+            
+            response = input("\nSua escolha: ").strip()
+            
+            items = current_list.get("items", []) # Recarrega a lista atual
+
+            if not response:  # Confirmação (Enter)
+                return current_list
+            
+            elif response.lower() == 'c':  # Cancelar
+                return {"items": []}
+            
+            elif response.lower() == 'a':  # Adicionar item
+                new_item = {}
+                new_item["product_name"] = input("Nome do produto: ").strip()
+                
+                # Manter quantidade e unidade no objeto, mas não exibir na interface
                 new_item["quantity"] = 1.0
-                print("Quantidade inválida, usando 1.0 como padrão.")
-            
-            new_item["unit"] = input("Unidade (kg, l, un, etc. - opcional): ").strip()
-            if not new_item["unit"]:
                 new_item["unit"] = None
+                
+                items.append(new_item)
+                current_list["items"] = items
+                # Continua no loop para nova confirmação
             
-            items = shopping_list.get("items", [])
-            items.append(new_item)
+            elif response.lower().startswith('r'):  # Remover item
+                try:
+                    item_index = int(response[1:]) - 1
+                    if 0 <= item_index < len(items):
+                        removed_item = items.pop(item_index)
+                        print(f"Item removido: {removed_item.get('product_name')}")
+                        current_list["items"] = items
+                    else:
+                        print("Índice de item inválido.")
+                    # Continua no loop para nova confirmação
+                except (ValueError, IndexError):
+                    print("Comando inválido para remoção.")
+                    # Continua no loop
             
-            # Recursivamente pedir confirmação da nova lista
-            return self._confirm_shopping_list({"items": items})
-        
-        elif response.lower().startswith('r'):  # Remover item
-            try:
-                item_index = int(response[1:]) - 1
-                items = shopping_list.get("items", [])
-                
-                if 0 <= item_index < len(items):
-                    removed_item = items.pop(item_index)
-                    print(f"Item removido: {removed_item.get('product_name')}")
-                else:
-                    print("Índice de item inválido.")
-                
-                # Recursivamente pedir confirmação da nova lista
-                return self._confirm_shopping_list({"items": items})
-            except (ValueError, IndexError):
-                print("Comando inválido para remoção.")
-                return self._confirm_shopping_list(shopping_list)
-        
-        else:  # Modificar item
-            try:
-                item_index = int(response) - 1
-                items = shopping_list.get("items", [])
-                
-                if 0 <= item_index < len(items):
-                    item = items[item_index]
-                    print(f"Modificando: {item.get('product_name')}")
-                    
-                    new_name = input(f"Nome do produto [{item.get('product_name')}]: ").strip()
-                    if new_name:
-                        item["product_name"] = new_name
-                    
-                    new_quantity = input(f"Quantidade [{item.get('quantity')}]: ").strip()
-                    if new_quantity:
-                        try:
-                            item["quantity"] = float(new_quantity)
-                        except ValueError:
-                            print("Quantidade inválida, mantendo o valor anterior.")
-                    
-                    new_unit = input(f"Unidade [{item.get('unit') or ''}]: ").strip()
-                    if new_unit:
-                        item["unit"] = new_unit
-                    
-                    items[item_index] = item
-                else:
-                    print("Índice de item inválido.")
-                
-                # Recursivamente pedir confirmação da nova lista
-                return self._confirm_shopping_list({"items": items})
-            except (ValueError, IndexError):
-                print("Comando inválido.")
-                return self._confirm_shopping_list(shopping_list)
+            else:  # Modificar item
+                try:
+                    item_index = int(response) - 1
+                    if 0 <= item_index < len(items):
+                        item = items[item_index]
+                        print(f"Modificando: {item.get('product_name')}")
+                        
+                        new_name = input(f"Nome do produto [{item.get('product_name')}]: ").strip()
+                        if new_name:
+                            item["product_name"] = new_name
+                        
+                        # Manter quantidade e unidade no objeto, mas não pedir ao usuário
+                        
+                        items[item_index] = item
+                        current_list["items"] = items
+                    else:
+                        print("Índice de item inválido.")
+                    # Continua no loop para nova confirmação
+                except (ValueError, IndexError):
+                    print("Comando inválido.")
+                    # Continua no loop
     
     def process_shopping_list(self, text: str) -> Dict[str, Any]:
         """
@@ -196,37 +234,37 @@ class ShoppingAssistant:
                 logger.error(error_message)
                 return {"success": False, "error": error_message}
             
-            # A lista de compras inicial
             initial_list = understanding_result.get("shopping_list", {})
             
-            # 2. Agente de refinamento
+            # 2. Agente de refinamento (com DB awareness)
             refinement_result = run_refinement_agent(initial_list)
             
             if not refinement_result.get("success", False):
-                # Se o refinamento falhar, usamos a lista inicial
-                logger.warning("Refinamento falhou, usando lista inicial")
+                logger.warning("Refinamento falhou, usando lista inicial para confirmação")
                 refined_list = initial_list
+                ambiguous_items = {}
             else:
                 refined_list = refinement_result.get("refined_list", initial_list)
+                ambiguous_items = refinement_result.get("ambiguous_items", {})
+                if refinement_result.get("refinement_error"):
+                     logger.warning(f"Erro durante o refinamento (ignorado): {refinement_result.get('refinement_error')}")
             
-            # 3. Confirmação com o usuário
+            # 3. Confirmação com o usuário (tratando ambiguidades)
             print("\nLista de compras extraída do seu texto:")
             print(self._format_shopping_list_for_display(initial_list))
             
-            if refinement_result.get("success", False) and refined_list != initial_list:
-                print("\nLista de compras refinada:")
-                print(self._format_shopping_list_for_display(refined_list))
-            
-            # Solicitar confirmação
-            confirmed_list = self._confirm_shopping_list(refined_list)
+            # Passar a lista refinada e os itens ambíguos para confirmação
+            confirmed_list = self._confirm_shopping_list(refined_list, ambiguous_items)
             
             # Verificar se o usuário cancelou
             if not confirmed_list.get("items", []):
                 return {"success": False, "error": "Operação cancelada pelo usuário"}
             
+            # Obter o número total de itens solicitados após confirmação
+            total_requested_items = len(confirmed_list.get("items", []))
+            
             # 4. Agente de consulta
-            # O agente de consulta espera um objeto ShoppingList, mas o código atualizado usa dicionários
-            # Vamos converter o dicionário para o objeto ShoppingList para compatibilidade
+            # Converter o dicionário confirmado para o objeto ShoppingList
             shopping_list_obj = ShoppingList(
                 items=[
                     ShoppingItem(
@@ -247,15 +285,18 @@ class ShoppingAssistant:
             price_options = query_result.get("price_options", {})
             products_not_found = query_result.get("products_not_found", [])
             
-            # Verificar se encontrou algum produto
             if not price_options:
-                error_message = "Não encontrei nenhum dos produtos da sua lista no nosso banco de dados."
+                error_message = "Não encontrei nenhum dos produtos da sua lista confirmada no nosso banco de dados."
                 logger.error(error_message)
                 return {"success": False, "error": error_message}
             
             # 5. Agente de otimização
-            # Passar o dicionário da lista de compras para o agente de otimização
-            optimization_result = run_optimization_agent(price_options, products_not_found, confirmed_list)
+            # Modificado: inclui o total de itens solicitados
+            optimization_result = run_optimization_agent(
+                price_options, 
+                products_not_found,
+                total_requested_items
+            )
             
             if not optimization_result.get("success", False):
                 error_message = optimization_result.get("error", "Erro desconhecido ao otimizar compras")
@@ -282,7 +323,7 @@ class ShoppingAssistant:
             }
             
         except Exception as e:
-            logger.error(f"Erro ao processar lista de compras: {str(e)}")
+            logger.exception(f"Erro fatal ao processar lista de compras: {str(e)}") # Usar logger.exception para incluir traceback
             return {"success": False, "error": str(e)}
 
 def main():

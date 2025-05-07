@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "smart-shopping-assistant"
+version = "0.1.0"
+description = "Sistema central do assistente de compras inteligente"
+authors = [
+    { name="Felipe Correia", email="felipecorrei@gmail.com" }
+]
+dependencies = []
+
+[project.urls]
+homepage = "https://github.com/felipecorreia/smart-shopping-assistant"
+repository = "https://github.com/felipecorreia/smart-shopping-assistant"
+
+[tool.setuptools.packages]
+find = {}

@@ -1,13 +1,11 @@
 """
-Agente para formatação de respostas.
+Agente para formatação de resposta (versão simplificada sem cálculo de quantidades).
 """
 
 import os
 import logging
 from typing import Dict, Any, List, Optional, TypedDict, Annotated, Literal
-import google.generativeai as genai
 from langgraph.graph import StateGraph, END
-from dotenv import load_dotenv
 
 # Configurar logging
 logging.basicConfig(
@@ -15,16 +13,6 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
 )
 logger = logging.getLogger(__name__)
-
-# Carregar variáveis de ambiente
-load_dotenv()
-
-# Configurar Gemini
-api_key = os.getenv("GEMINI_API_KEY")
-if not api_key:
-    logger.error("API key do Gemini não encontrada. Configure a variável GEMINI_API_KEY no arquivo .env")
-else:
-    genai.configure(api_key=api_key)
 
 # Definir o schema de estado
 class ResponseState(TypedDict):
@@ -35,7 +23,7 @@ class ResponseState(TypedDict):
 
 def format_response(state: ResponseState) -> ResponseState:
     """
-    Formata a resposta para o usuário.
+    Formata a resposta para o usuário (versão simplificada).
     
     Args:
         state: Estado atual
@@ -46,102 +34,118 @@ def format_response(state: ResponseState) -> ResponseState:
     try:
         recommendation = state["recommendation"]
         
-        if not api_key:
-            # Formatação básica sem LLM
-            single_store = recommendation["single_store_option"]
-            multi_store = recommendation["multi_store_option"]
-            savings = recommendation["savings"]
-            savings_percentage = recommendation["savings_percentage"]
-            products_not_found = recommendation["products_not_found"]
-            
-            response_parts = []
-            
-            # Adicionar cabeçalho
-            response_parts.append("# Análise da sua lista de compras\n")
-            
-            # Adicionar produtos não encontrados
-            if products_not_found:
-                response_parts.append("## Produtos não encontrados\n")
-                for product in products_not_found:
-                    response_parts.append(f"- {product}\n")
-                response_parts.append("\n")
-            
-            # Adicionar opção de único supermercado
-            response_parts.append(f"## Opção em um único supermercado: {single_store['supermarket_name']}\n")
-            response_parts.append(f"**Preço total: R$ {single_store['total_price']:.2f}**\n\n")
-            
-            for item in single_store["items"]:
-                quantity = item.get("quantity", 1.0)
-                unit_price = item.get("unit_price", item["price"])
-                total_price = item.get("total_price", item["price"])
-                unit = item.get("unit", "")
-                unit_str = f" {unit}" if unit else ""
-                
-                if quantity == 1.0:
-                    response_parts.append(f"- {item['product_name']}: R$ {total_price:.2f}\n")
-                else:
-                    response_parts.append(f"- {item['product_name']} ({quantity}{unit_str}): R$ {total_price:.2f} (R$ {unit_price:.2f} cada)\n")
-            
-            response_parts.append("\n")
-            
-            # Adicionar opção de múltiplos supermercados
-            if multi_store and savings > 0:
-                response_parts.append(f"## Opção em múltiplos supermercados\n")
-                response_parts.append(f"**Preço total: R$ {single_store['total_price'] - savings:.2f}**\n")
-                response_parts.append(f"**Economia: R$ {savings:.2f} ({savings_percentage:.2f}%)**\n\n")
-                
-                for store in multi_store:
-                    response_parts.append(f"### {store['supermarket_name']} - R$ {store['total_price']:.2f}\n")
-                    for item in store["items"]:
-                        quantity = item.get("quantity", 1.0)
-                        unit_price = item.get("unit_price", item["price"])
-                        total_price = item.get("total_price", item["price"])
-                        unit = item.get("unit", "")
-                        unit_str = f" {unit}" if unit else ""
-                        
-                        if quantity == 1.0:
-                            response_parts.append(f"- {item['product_name']}: R$ {total_price:.2f}\n")
-                        else:
-                            response_parts.append(f"- {item['product_name']} ({quantity}{unit_str}): R$ {total_price:.2f} (R$ {unit_price:.2f} cada)\n")
-                    response_parts.append("\n")
-            
-            # Adicionar recomendação
-            response_parts.append("## Recomendação\n")
-            if multi_store and savings > 0:
-                response_parts.append(f"Recomendamos comprar em múltiplos supermercados para economizar R$ {savings:.2f} ({savings_percentage:.2f}%).\n")
-            else:
-                response_parts.append(f"Recomendamos comprar tudo no {single_store['supermarket_name']}.\n")
-            
-            formatted_response = "".join(response_parts)
-        else:
-            # Usar Gemini para formatar resposta
-            model = genai.GenerativeModel(model_name='gemini-2.0-flash') # Ou o modelo que você está usando
-            
-            # Converter recomendação para texto
-            import json
-            recommendation_json = json.dumps(recommendation, indent=2)
-            
-            prompt = f"""
-            Formate uma resposta amigável para o usuário com base na seguinte recomendação de compras:
-            
-            ```json
-            {recommendation_json}
-            ```
-            
-            A resposta deve incluir:
-            1. Uma saudação amigável
-            2. Lista de produtos não encontrados (se houver)
-            3. Opção de compra em um único supermercado, com nome do mercado, preço total e lista de produtos com quantidades e preços unitários/totais
-            4. Opção de compra em múltiplos supermercados (se economizar dinheiro), com nome dos mercados, preço total, economia e lista de produtos com quantidades e preços unitários/totais para cada mercado
-            5. Uma recomendação clara sobre qual opção é melhor
-            
-            Use formatação Markdown para tornar a resposta mais legível.
-            """
-            
-            response = model.generate_content(prompt)
-            formatted_response = response.text
+        if not recommendation:
+            raise ValueError("Recomendação não encontrada")
         
-        logger.info("Resposta formatada com sucesso")
+        single_store_option = recommendation.get("single_store_option", {})
+        multi_store_option = recommendation.get("multi_store_option", [])
+        savings = recommendation.get("savings", 0.0)
+        savings_percentage = recommendation.get("savings_percentage", 0.0)
+        products_not_found = recommendation.get("products_not_found", [])
+        total_requested_items = recommendation.get("total_requested_items", 0)  # Obter o total de itens solicitados
+        
+        # Calcular itens encontrados em cada opção
+        single_store_items_count = len(single_store_option.get("items", []))
+        
+        # Para a opção multi_store, contar produtos únicos e calcular preço total
+        multi_store_products = set()
+        multi_store_total_price = 0.0
+        products_counted = set()
+        
+        for store in multi_store_option:
+            for item in store.get("items", []):
+                product_name = item.get("product_name")
+                multi_store_products.add(product_name)
+                
+                # Verificar se este produto já foi contabilizado
+                if product_name not in products_counted:
+                    multi_store_total_price += item["price"]
+                    products_counted.add(product_name)
+                
+        multi_store_items_count = len(multi_store_products)
+        
+        response_parts = []
+        
+        # Cabeçalho
+        response_parts.append("# Resultado da Comparação de Preços\n")
+        
+        # Produtos não encontrados
+        if products_not_found:
+            response_parts.append("\n## Produtos não encontrados\n")
+            for product in products_not_found:
+                response_parts.append(f"- {product}\n")
+        
+        # Melhor opção em um único supermercado
+        response_parts.append(f"\n## Opção 1: Comprar tudo em um só lugar, {single_store_items_count} de {total_requested_items} itens encontrados\n")
+        response_parts.append(f"**Supermercado:** {single_store_option.get('supermarket_name', 'Desconhecido')}\n")
+        response_parts.append(f"**Preço total:** R$ {single_store_option.get('total_price', 0.0):.2f}\n")
+        
+        response_parts.append("\n**Itens:**\n")
+        for item in single_store_option.get("items", []):
+            # Exibir apenas nome do produto e preço
+            response_parts.append(f"- {item['product_name']}: R$ {item['price']:.2f}\n")
+            # Opcional: Adicionar link/validade se disponível
+            valid_until = item.get("valid_until")
+            folder_link = item.get("folder_link")
+            observations = item.get("observations")
+            if valid_until:
+                response_parts.append(f"    (Válido até: {valid_until})\n")
+            if observations:
+                response_parts.append(f"    (Obs: {observations})\n")
+            if folder_link:
+                response_parts.append(f"    (Mais info: {folder_link})\n")
+
+        # Opção com múltiplos supermercados
+        if multi_store_option:
+            response_parts.append(f"\n## Opção 2: Comprar em vários lugares, {multi_store_items_count} de {total_requested_items} itens encontrados\n")
+            response_parts.append(f"**Preço total:** R$ {multi_store_total_price:.2f}\n")
+            if savings > 0:
+                response_parts.append(f"**Economia:** R$ {savings:.2f} (aproximadamente {savings_percentage:.1f}%)\n")
+            else:
+                response_parts.append(f"**%)\n")
+            
+            for store in multi_store_option:
+                store_name = store.get("supermarket_name", "Desconhecido")
+                store_total = store.get("total_price", 0.0)
+                
+                response_parts.append(f"\n**{store_name} (Preço total: R$ {store_total:.2f}):**\n")
+                
+                for item in store.get("items", []):
+                    # Exibir apenas nome do produto e preço
+                    response_parts.append(f"- {item['product_name']}: R$ {item['price']:.2f}\n")
+                    # Opcional: Adicionar link/validade se disponível
+                    valid_until = item.get("valid_until")
+                    folder_link = item.get("folder_link")
+                    observations = item.get("observations")
+                    if valid_until:
+                        response_parts.append(f"    (Válido até: {valid_until})\n")
+                    if observations:
+                        response_parts.append(f"    (Obs: {observations})\n")
+                    if folder_link:
+                        response_parts.append(f"    (Mais info: {folder_link})\n")
+        
+        # Conclusão
+        response_parts.append("\n## Conclusão\n")
+        
+        # Verificar se o supermercado único tem todos os itens solicitados
+        single_store_complete = single_store_items_count == total_requested_items
+
+        if multi_store_option and savings > 0:
+            response_parts.append(f"Comprando cada item onde é mais barato, você economiza R$ {savings:.2f} ({savings_percentage:.1f}%) em comparação com a melhor opção de supermercado único.\n")
+            if savings_percentage > 15:
+                response_parts.append("**Recomendação: Vale a pena comprar em múltiplos supermercados.**\n")
+            else:
+                if single_store_complete:
+                    response_parts.append("**Recomendação: A economia é pequena, talvez seja mais conveniente comprar em um único supermercado.**\n")
+                else:
+                    response_parts.append("**Recomendação: A economia é pequena, mas considere que a opção de supermercado único não contém todos os itens solicitados.**\n")
+        else:
+            if single_store_complete:
+                response_parts.append(f"A melhor opção é comprar tudo no **{single_store_option.get('supermarket_name', 'Desconhecido')}**.\n")
+            else:
+                response_parts.append(f"O **{single_store_option.get('supermarket_name', 'Desconhecido')}** tem o melhor preço para os itens encontrados ({single_store_items_count} de {total_requested_items}), mas não possui todos os itens da sua lista.\n")
+        
+        formatted_response = "".join(response_parts)
         
         return {
             "recommendation": recommendation,
@@ -150,9 +154,9 @@ def format_response(state: ResponseState) -> ResponseState:
         }
     except Exception as e:
         error_message = f"Erro ao formatar resposta: {str(e)}"
-        logger.error(error_message)
+        logger.exception(error_message) # Usar exception para logar traceback
         return {
-            "recommendation": state["recommendation"],
+            "recommendation": state.get("recommendation", {}),
             "formatted_response": None,
             "error": error_message
         }
@@ -181,7 +185,7 @@ def create_graph() -> StateGraph:
 
 def run_response_agent(recommendation: Dict[str, Any]) -> Dict[str, Any]:
     """
-    Executa o agente de resposta para formatar uma recomendação.
+    Executa o agente de resposta para formatar a recomendação.
     
     Args:
         recommendation: Recomendação de compras
@@ -218,7 +222,7 @@ def run_response_agent(recommendation: Dict[str, Any]) -> Dict[str, Any]:
         }
     except Exception as e:
         error_message = f"Erro ao executar agente de resposta: {str(e)}"
-        logger.error(error_message)
+        logger.exception(error_message) # Usar exception para logar traceback
         return {
             "success": False,
             "error": error_message

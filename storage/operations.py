@@ -9,7 +9,7 @@ from typing import List, Dict, Any, Optional, Set
 import pandas as pd
 
 from storage.bigquery_client import BigQueryClient
-from data.schemas import ProductSchema
+from data.schema import ProductSchema
 
 # Configurar logging
 logging.basicConfig(
