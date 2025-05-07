@@ -345,3 +345,99 @@ class BigQueryOperations:
         except Exception as e:
             logger.error(f"Erro ao obter categorias de produtos: {str(e)}")
             return {}
+            
+    def product_exists(self, product_name: str) -> bool:
+        """
+        Verifica se um produto existe exatamente com este nome no banco de dados.
+        
+        Args:
+            product_name: Nome do produto a verificar
+            
+        Returns:
+            Boolean indicando se o produto existe
+        """
+        try:
+            query = f"""
+            SELECT 1
+            FROM `{self.bq_client.project_id}.{self.bq_client.dataset_id}.{self.bq_client.table_id}`
+            WHERE LOWER(product_name) = LOWER(@nome)
+            LIMIT 1
+            """
+            
+            job_config = self.bq_client.client.QueryJobConfig(
+                query_parameters=[
+                    self.bq_client.client.ScalarQueryParameter("nome", "STRING", product_name.lower())
+                ]
+            )
+            
+            query_job = self.bq_client.client.query(query, job_config=job_config)
+            results = query_job.result()
+            
+            return results.total_rows > 0
+        except Exception as e:
+            logger.error(f"Erro ao verificar existência do produto '{product_name}': {str(e)}")
+            return False
+    
+    def get_similar_products(self, product_name: str, threshold: float = 0.7) -> List[Dict[str, Any]]:
+        """
+        Busca produtos com nomes similares ao fornecido.
+        
+        Args:
+            product_name: Nome do produto para buscar similares
+            threshold: Limite mínimo de similitude (0-1)
+            
+        Returns:
+            Lista de produtos similares com scores
+        """
+        try:
+            # BigQuery não tem funções nativas de similaridade de texto muito avançadas,
+            # mas podemos usar algumas técnicas simples como:
+            
+            query = f"""
+            WITH product_tokens AS (
+                SELECT SPLIT(LOWER(@nome), ' ') as tokens
+            ),
+            products AS (
+                SELECT 
+                    product_name as name,
+                    (
+                        -- Calcular similaridade baseada em palavras comuns
+                        -- Isso é uma aproximação simples, pode ser melhorado
+                        (SELECT COUNT(1) FROM UNNEST(SPLIT(LOWER(product_name), ' ')) token
+                         WHERE token IN UNNEST((SELECT tokens FROM product_tokens)))
+                        /
+                        (SELECT COUNT(1) FROM UNNEST(SPLIT(LOWER(product_name), ' ')))
+                    ) as similarity
+                FROM `{self.bq_client.project_id}.{self.bq_client.dataset_id}.{self.bq_client.table_id}`
+                WHERE 
+                    -- Filtrar produtos que contêm pelo menos parte da string de busca
+                    LOWER(product_name) LIKE CONCAT('%', LOWER(@nome), '%')
+                    OR LOWER(@nome) LIKE CONCAT('%', LOWER(product_name), '%')
+            )
+            SELECT * FROM products 
+            WHERE similarity >= @threshold
+            ORDER BY similarity DESC
+            LIMIT 5
+            """
+            
+            job_config = self.bq_client.client.QueryJobConfig(
+                query_parameters=[
+                    self.bq_client.client.ScalarQueryParameter("nome", "STRING", product_name),
+                    self.bq_client.client.ScalarQueryParameter("threshold", "FLOAT", threshold)
+                ]
+            )
+            
+            query_job = self.bq_client.client.query(query, job_config=job_config)
+            results = query_job.result()
+            
+            similar_products = []
+            for row in results:
+                similar_products.append({
+                    "name": row.name,
+                    "similarity": row.similarity
+                })
+                
+            return similar_products
+        except Exception as e:
+            logger.error(f"Erro ao buscar produtos similares a '{product_name}': {str(e)}")
+            return []
