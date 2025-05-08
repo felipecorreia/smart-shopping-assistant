@@ -35,7 +35,8 @@ async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> N
         context.bot,
         chat_id=update.effective_chat.id,
         text=f"Olá {user.first_name}! 👋\nEu sou seu Assistente de Compras.\n" +
-             "Envie sua lista com pelo menos 3 itens e eu te ajudo a economizar!"
+             "Envie sua lista com pelo menos 3 itens e eu te ajudo a economizar!\n\n"
+             "PS: estamos em beta teste rodando para alguns amigos próximos. Podem ocorrer alguns erros. "
     )
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
