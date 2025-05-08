@@ -40,7 +40,7 @@ def classificar_cenario(total_itens: int, itens_encontrados: int, encontrados_po
     """
     # Verificar se algum item foi encontrado
     if itens_encontrados == 0:
-        return "r0", "Nenhum item encontrado", "Tente outros termos de busca ou verifique a disponibilidade em outros mercados.", {}
+        return "r0", "Nenhum item encontrado", "Infelizmente, nenhum item da sua lista está em promoção nos mercados que acompanhamos. Quer sugerir outro mercado? Acesse: http://form.mercado.com", {}
     
     # Se não encontrou todos os itens, verificar distribuição
     max_itens_mercado = max(encontrados_por_mercado.values()) if encontrados_por_mercado else 0
@@ -163,10 +163,23 @@ def format_response(state: ResponseState) -> ResponseState:
             single_store_name
         )
         
+        # Verificar se as opções são realmente diferentes
+        are_options_same = False
+
+        # Se há apenas um mercado na opção 2 (mesma que opção 1)
+        if len(multi_store_option) == 1 and single_store_name == multi_store_option[0].get('supermarket_name'):
+            # E se os preços totais são praticamente iguais
+            if abs(single_store_price - multi_store_total_price) < 0.01:
+                are_options_same = True
+        
         # Determinar qual opção é recomendada
         opcao_recomendada = "2"  # Default para multi_store
-        if cenario in ["r3", "r6", "r7"]:
-            opcao_recomendada = "1"  # Para cenários onde o único mercado é recomendado
+        if cenario in ["r3", "r6", "r7"] or are_options_same:
+            opcao_recomendada = "1"
+
+        # Se as opções são iguais, modificar o texto da recomendação
+        if are_options_same:
+            recomendacao = f"Analisamos nos folders de promoção e identificamos que todos os seus itens estão disponíveis apenas no {single_store_name}. Recomendamos fazer suas compras lá."
         
         response_parts = []
         
@@ -184,10 +197,13 @@ def format_response(state: ResponseState) -> ResponseState:
                 response_parts.append(f"- {product}\n")
         
         # Opções de compra - Novo formato
-        response_parts.append("\n## Separei 2 opções para você economizar na sua lista de compras:\n")
+        if are_options_same:
+            response_parts.append("\n## Melhor opção para sua lista de compras:\n")
+        else:
+            response_parts.append("\n## Separei 2 opções para você economizar na sua lista de compras:\n")
         
         # Opção 1: Mercado único - Formato melhorado
-        response_parts.append(f"\n### Opção 1: Comprar a maior parte da lista em um só lugar ({single_store_items_count} de {total_requested_items} itens)\n")
+        response_parts.append(f"\n### Opção 1: Mercado com mais itens disponíveis e o menor valor total ({single_store_items_count} de {total_requested_items} itens)\n")
         response_parts.append(f"**Mercado:** {single_store_name}\n")
         response_parts.append(f"**Preço total:** R$ {single_store_price:.2f}\n")
         
@@ -196,7 +212,16 @@ def format_response(state: ResponseState) -> ResponseState:
         for item in single_store_items:
             product_name = item.get("product_name", "")
             price = item.get("price", 0.0)
-            response_parts.append(f"- {product_name}: R$ {price:.2f}\n")
+            quantity = item.get("quantity", 1.0)
+            unit = item.get("unit", "un")
+            
+            # Formatar a exibição de quantidade e unidade
+            quantity_display = ""
+            if quantity != 1.0 or unit:
+                unit_str = unit if unit else "un"
+                quantity_display = f" {quantity}{unit_str}"
+            
+            response_parts.append(f"- {product_name}{quantity_display}: R$ {price:.2f}\n")
         
         # Link do folder da Opção 1
         folder_link = None
@@ -205,8 +230,8 @@ def format_response(state: ResponseState) -> ResponseState:
             response_parts.append(f"\n**Link do folder:** {folder_link}\n")
         
         # Opção 2: Múltiplos mercados - Formato melhorado
-        if multi_store_option:
-            response_parts.append(f"\n### Opção 2: Dividir a compra em diversos mercados ({multi_store_items_count} de {total_requested_items} itens)\n")
+        if multi_store_option and not are_options_same:
+            response_parts.append(f"\n### Opção 2: Compre tudo o que precisa nos mercados com os menores preços promocionais da semana ({multi_store_items_count} de {total_requested_items} itens)\n")
             response_parts.append(f"**Sua compra total será:** R$ {multi_store_total_price:.2f}\n")
             
             # Detalhar cada mercado separadamente
@@ -223,7 +248,16 @@ def format_response(state: ResponseState) -> ResponseState:
                 for item in store_items:
                     product_name = item.get("product_name", "")
                     price = item.get("price", 0.0)
-                    response_parts.append(f"- {product_name}: R$ {price:.2f}\n")
+                    quantity = item.get("quantity", 1.0)
+                    unit = item.get("unit", "un")
+                    
+                    # Formatar a exibição de quantidade e unidade
+                    quantity_display = ""
+                    if quantity != 1.0 or unit:
+                        unit_str = unit if unit else "un"
+                        quantity_display = f" {quantity}{unit_str}"
+                    
+                    response_parts.append(f"- {product_name}{quantity_display}: R$ {price:.2f}\n")
                 
                 # Link do folder deste mercado
                 if store_items and store_items[0].get("folder_link"):
@@ -233,7 +267,7 @@ def format_response(state: ResponseState) -> ResponseState:
         # Recomendação (nova seção com formato melhorado)
         response_parts.append(f"\n## Nossa Recomendação (Opção {opcao_recomendada})\n")
         response_parts.append(f"**Análise:** {justificativa}\n")
-        response_parts.append(f"**Recomendamos:** {recomendacao}\n")
+        response_parts.append(f"**Recomendação:** {recomendacao}\n")
         
         formatted_response = "".join(response_parts)
         

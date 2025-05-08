@@ -1,4 +1,3 @@
 
 
 ##próximos passos:
-8. Executar com Docker

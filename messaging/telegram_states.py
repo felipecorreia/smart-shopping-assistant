@@ -72,36 +72,33 @@ def clear_state(context: ContextTypes.DEFAULT_TYPE) -> None:
 def is_greeting(text: str, greeting_keywords: List[str]) -> bool:
     """
     Verifica se o texto é uma saudação/mensagem casual e não uma lista de compras.
-    
-    Args:
-        text: Texto da mensagem
-        greeting_keywords: Lista de palavras-chave de saudação
-        
-    Returns:
-        True se for uma saudação, False se provavelmente for uma lista
     """
     # Converte para minúsculo para comparação
     text_lower = text.lower().strip()
     
-    # Verifica se é uma mensagem curta
-    if len(text_lower.split()) <= 5:
-        # Verifica se contém palavras-chave de saudação
-        for keyword in greeting_keywords:
-            if keyword in text_lower:
-                return True
-        
-        # Se for muito curto, provavelmente não é uma lista
-        if len(text_lower.split()) <= 2:
-            return True
-    
-    # Verifica características comuns de uma lista de compras
+    # Primeiro verificar características de item de compra
     has_food_items = bool(re.search(r'(arroz|feijão|leite|pão|café|açúcar|sal|óleo|azeite|carne|frango|peixe|legumes|frutas|verduras|macarrão|molho|queijo|manteiga|margarina|ovos|farinha|bolacha|biscoito)', text_lower))
     has_quantity = bool(re.search(r'(kg|g|ml|l|litro|pacote|caixa|lata|unidade|dúzia|un|pote)', text_lower))
-    has_comma_separation = ',' in text
     
-    # Se tiver características de lista, não é saudação
-    if has_food_items or has_quantity or has_comma_separation:
+    # Se tem característica de alimento, sempre considerar como lista
+    if has_food_items or has_quantity:
         return False
+    
+    # Verificar se é uma saudação
+    for keyword in greeting_keywords:
+        if keyword in text_lower:
+            return True
+    
+    # Se é muito curto, verificar mais detalhadamente
+    if len(text_lower.split()) <= 2:
+        # Verificar comuns itens de compra com uma palavra
+        common_items = ['arroz', 'feijão', 'açúcar', 'sal', 'café', 'leite', 'pão', 'ovo', 
+                        'carne', 'frango', 'peixe', 'banana', 'maçã', 'laranja', 'tomate', 
+                        'cebola', 'alho', 'batata', 'cenoura', 'abobrinha', 'cerveja', 'vinho']
         
-    # Em caso de dúvida, assumimos que é uma saudação
+        # Se a mensagem é exatamente um item comum, considerar como lista
+        if text_lower in common_items:
+            return False
+    
+    # Em caso de dúvida para mensagens curtas, assumir que é saudação
     return True

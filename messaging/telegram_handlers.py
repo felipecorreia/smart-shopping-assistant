@@ -26,29 +26,26 @@ logger = logging.getLogger(__name__)
 # Lista de palavras-chave para saudações comuns
 GREETING_KEYWORDS = [
     "oi", "olá", "ola", "bom dia", "boa tarde", "boa noite", 
-    "e aí", "eai", "tudo bem", "como vai", "hey", "hi", "hello"
+    "e aí", "eai", "tudo bem", "como vai", "hey", "hi", "hello", "opa", "opah", "salve", "salve salve"
 ]
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handler para /start."""
     user = update.effective_user
     await send_text_message(
         context.bot,
         chat_id=update.effective_chat.id,
-        text=f"Olá {user.first_name}! 👋\nEu sou seu Assistente de Compras.\n"
-             "Envie sua lista que eu ajudo a economizar!\n"
-             "Envia sua lista de compras como: Arroz, Café, Macarrão\n"
-             "\nDigite /help para mais informações."
+        text=f"Olá {user.first_name}! 👋\nEu sou seu Assistente de Compras.\n" +
+             "Envie sua lista com pelo menos 3 itens e eu te ajudo a economizar!"
     )
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Handler para /help."""
     await send_text_message(
         context.bot,
         chat_id=update.effective_chat.id,
-        text="✍️ Envie sua lista de compras como texto.\n"
-             "Ex: 'maçã, arroz, leite'"
+        text="✍️ Envie sua lista de compras com pelo menos 3 itens para uma boa comparação.\n" +
+             "Ex: 'Arroz, feijão, açúcar, café, leite'"
     )
+
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Processa mensagens do usuário."""
@@ -130,9 +127,11 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
             context.bot,
             chat_id=chat_id,
             text="Olá! Estou pronto para te ajudar a pesquisar sua lista de compras e economizar. "
-                 "Envie sua lista de compras para que eu possa encontrar os melhores preços!"
+                 "Envie sua pelo menos 3 itens para que eu possa encontrar os melhores preços!"
         )
         return
+    # UI de digitação do bot
+    
 
     await send_text_message(context.bot, chat_id, "🔍 Obrigado! Estou entendendo a sua lista...")
     

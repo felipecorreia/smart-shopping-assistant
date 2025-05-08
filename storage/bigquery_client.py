@@ -176,7 +176,7 @@ class BigQueryClient:
     
     def get_all_prices_for_product(self, product_name: str) -> List[Dict[str, Any]]:
         """
-        Obtém todos os preços para um produto.
+        Obtém todos os preços para produtos onde a primeira palavra corresponde exatamente ao termo buscado.
         
         Args:
             product_name: Nome do produto
@@ -185,6 +185,14 @@ class BigQueryClient:
             Lista de dicionários com preços
         """
         try:
+            # Limpar e obter apenas a primeira palavra do termo de busca
+            clean_product_name = product_name.strip().lower()
+            first_word = clean_product_name.split()[0] if clean_product_name else ""
+            
+            if not first_word:
+                logger.warning(f"Termo de busca vazio ou inválido: '{product_name}'")
+                return []
+            
             query = f"""
             SELECT
                 product_name,
@@ -199,7 +207,8 @@ class BigQueryClient:
             FROM
                 `{self.project_id}.{self.dataset_id}.{self.table_id}`
             WHERE
-                LOWER(product_name) LIKE LOWER('%{product_name}%')
+                (LOWER(product_name) = '{first_word}' OR 
+                LOWER(product_name) LIKE '{first_word} %')
             ORDER BY
                 price ASC
             """
@@ -209,19 +218,22 @@ class BigQueryClient:
             
             prices = []
             for row in results:
-                prices.append({
-                    "product_name": row.product_name,
-                    "price": row.price,
-                    "supermarket_name": row.supermarket_name,
-                    "category": row.category,
-                    "unit": row.unit,
-                    "quantity": row.quantity,
-                    "observations": row.observations,
-                    "folder_link": row.folder_link,
-                    "valid_until": row.valid_until
-                })
+                # Verificação adicional para garantir que a primeira palavra corresponde exatamente
+                product_first_word = row.product_name.lower().split()[0] if row.product_name else ""
+                if product_first_word == first_word:
+                    prices.append({
+                        "product_name": row.product_name,
+                        "price": row.price,
+                        "supermarket_name": row.supermarket_name,
+                        "category": row.category,
+                        "unit": row.unit,
+                        "quantity": row.quantity,
+                        "observations": row.observations,
+                        "folder_link": row.folder_link,
+                        "valid_until": row.valid_until
+                    })
             
-            logger.info(f"Encontrados {len(prices)} preços para o produto '{product_name}'")
+            logger.info(f"Encontrados {len(prices)} preços para o produto '{clean_product_name}' (primeira palavra: '{first_word}')")
             return prices
         
         except Exception as e:

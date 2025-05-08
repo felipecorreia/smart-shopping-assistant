@@ -59,19 +59,13 @@ async def send_error(bot: Bot, chat_id: int, message: str) -> None:
         logger.error(f"Falha ao enviar erro: {e}")
 
 def convert_markdown_to_html(markdown_text: str) -> str:
-    """
-    Converte marcação Markdown simples para HTML básico.
+    """Converte marcação Markdown para HTML com formatação melhorada."""
+    html_text = markdown_text
     
-    Args:
-        markdown_text: Texto com marcação Markdown
-        
-    Returns:
-        Texto com marcação HTML
-    """
-    # Converter títulos
-    html_text = re.sub(r'# (.*?)(?:\n|$)', r'<b>\1</b>\n', markdown_text)
-    html_text = re.sub(r'## (.*?)(?:\n|$)', r'<b>\1</b>\n', html_text)
-    html_text = re.sub(r'### (.*?)(?:\n|$)', r'<b>\1</b>\n', html_text)
+    # Converter títulos com melhor formatação
+    html_text = re.sub(r'# (.*?)(?:\n|$)', r'<div style="font-size:20px; font-weight:bold; margin:10px 0;">\1</div>\n', html_text)
+    html_text = re.sub(r'## (.*?)(?:\n|$)', r'<div style="font-size:18px; font-weight:bold; margin:8px 0;">\1</div>\n', html_text)
+    html_text = re.sub(r'### (.*?)(?:\n|$)', r'<div style="font-size:16px; font-weight:bold; margin:6px 0;">\1</div>\n', html_text)
     
     # Converter negrito
     html_text = re.sub(r'\*\*(.*?)\*\*', r'<b>\1</b>', html_text)
@@ -82,10 +76,11 @@ def convert_markdown_to_html(markdown_text: str) -> str:
     # Converter listas
     html_text = re.sub(r'- (.*?)(?:\n|$)', r'• \1\n', html_text)
     
-    # Limpar quaisquer caracteres escapados que foram deixados
+    # Limpar caracteres escapados
     html_text = re.sub(r'\\([\\`*_{}[\]()#+\-.!])', r'\1', html_text)
     
     return html_text
+
 
 def strip_formatting(text: str) -> str:
     """

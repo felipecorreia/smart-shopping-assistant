@@ -34,7 +34,20 @@ async def start_list_processing(update: Update, context: ContextTypes.DEFAULT_TY
     
     try:
         # Passo 1: Compreensão
+        
         understanding = run_understanding_agent(text)
+        # Verificar número mínimo de itens
+        items = understanding["shopping_list"].get("items", [])
+        if len(items) < 3:
+            await send_text_message(
+                context.bot, 
+                chat_id,
+                f"Identifiquei {len(items)} {'item' if len(items) == 1 else 'itens'} na sua lista: " +
+                ", ".join([item.get("product_name", "") for item in items]) + 
+                ".\n\nPara uma comparação efetiva de preços, envie pelo menos 3 produtos diferentes. " +
+                "Isso permitirá encontrar as melhores ofertas entre diferentes mercados."
+            )
+            return
         if not understanding["success"]:
             return await send_error(context.bot, chat_id, understanding.get("error"))
             
